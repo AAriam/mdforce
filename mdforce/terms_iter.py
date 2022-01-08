@@ -1,3 +1,10 @@
+"""
+Implementation of the individual terms of a general force field. Each function calculates the force
+for a number of particle-pairs – or in case of the angle vibration, particle-triplets – in an iterative way.
+Moreover, each function also returns the potential energy of each particle-pair/triplet.
+"""
+
+
 import numpy as np
 
 from . import terms
