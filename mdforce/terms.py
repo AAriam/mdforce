@@ -160,7 +160,7 @@ def bond_vibration_harmonic(
     return f_i, e
 
 
-def angle_vibration(
+def angle_vibration_harmonic(
         q_m: np.ndarray,
         q_l: np.ndarray,
         q_r: np.ndarray,
@@ -215,24 +215,26 @@ def angle_vibration(
     sin = np.sin(angle)
     angle_displacement = angle - angle_eq
     a = k * angle_displacement / sin
-    norm_mult_lm_rm = dist_ml * dist_mr
+    dist_ml_mult_dist_mr = dist_ml * dist_mr
+    r_ml_div_dist2_ml = r_ml / dist_ml ** 2
+    r_mr_div_dist2_mr = r_mr / dist_mr ** 2
 
     # Calculate potential
     e = k * angle_displacement ** 2
 
     # Calculate f_l
-    b = r_mr / norm_mult_lm_rm
-    c = cos * r_ml / dist_ml ** 2
-    f_l = a * (b - c)
+    b1 = r_mr / dist_ml_mult_dist_mr
+    c1 = cos * r_ml_div_dist2_ml
+    f_l = a * (b1 - c1)
 
     # Calculate f_r
-    b2 = r_ml / norm_mult_lm_rm
-    c2 = cos * r_mr / dist_mr ** 2
+    b2 = r_ml / dist_ml_mult_dist_mr
+    c2 = cos * r_mr_div_dist2_mr
     f_r = a * (b2 - c2)
 
     # Calculate f_m
-    b3 = (2 * q_m - q_l - q_r) / norm_mult_lm_rm
-    c3 = cos * (r_ml / dist_ml ** 2 + r_mr / dist_mr ** 2)
+    b3 = (2 * q_m - q_l - q_r) / dist_ml_mult_dist_mr
+    c3 = cos * (r_ml_div_dist2_ml + r_mr_div_dist2_mr)
     f_m = a * (b3 + c3)
     return f_m, f_l, f_r, e
 
