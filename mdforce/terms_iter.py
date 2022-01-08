@@ -169,7 +169,7 @@ def angle_vibration_harmonic(q, pair_idx, eq_angle, k):
     # FIXME
     # remove angle (added for debugging)
     for idx, (m, l, r) in enumerate(pair_idx):
-        f_m, f_l, f_r, e_mlr, angle = terms.angle_vibration(q[m], q[l], q[r], eq_angle[idx], k)
+        f_m, f_l, f_r, e_mlr, angle = terms.angle_vibration_harmonic(q[m], q[l], q[r], eq_angle[idx], k)
         f[[m, l, r]] += f_m, f_l, f_r
         e[[m, l, r]] += e_mlr
 
