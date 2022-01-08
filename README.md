@@ -1,18 +1,16 @@
-# Dimensions, Units, Quantities (DUQ)
-[![PyPI Latest Release](https://img.shields.io/pypi/v/duq.svg)](https://pypi.org/project/duq/)
-[![Package Status](https://img.shields.io/pypi/status/duq.svg)](https://pypi.org/project/duq/)
-[![License](https://img.shields.io/pypi/l/duq.svg)](https://github.com/Armin-Ariamajd/duq/blob/main/LICENSE)
+# MDForce
+[![PyPI Latest Release](https://img.shields.io/pypi/v/mdforce.svg)](https://pypi.org/project/mdforce/)
+[![Package Status](https://img.shields.io/pypi/status/mdforce.svg)](https://pypi.org/project/mdforce/)
+[![License](https://img.shields.io/pypi/l/mdforce.svg)](https://github.com/Armin-Ariamajd/mdforce/blob/main/LICENSE)
 
 
-DUQ offers tools for working with physical dimensions, units, and quantities. It allows for:
-* dimensional analysis
-* unit conversion
-* calculations with physical quantites
+MDForce is a package for molecular dynamics (MD) simulations; it offers:
+* force-field and potential energy calculations
 
 ## Installing
 ```sh
-pip install duq
+pip install mdforce
 ```
 
 ## Manual
-See the [provided Jupyter notebooks](https://github.com/Armin-Ariamajd/duq/tree/main/docs) for demonstration of the core functionalities.
+See the [provided Jupyter notebooks](https://github.com/Armin-Ariamajd/mdforce/tree/main/docs) for demonstration of the core functionalities.
