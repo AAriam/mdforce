@@ -151,12 +151,13 @@ def bond_vibration_harmonic(
     r_ji = q_i - q_j
     dist = lin.norm(r_ji)
     displacement = dist - dist_eq
+    k_times_displ = k * displacement
 
     # Calculate potential
-    e = k * displacement ** 2 / 2
+    e = k_times_displ * displacement / 2
 
     # Calculate force
-    f_i = (-k * displacement / dist) * r_ji
+    f_i = (-k_times_displ / dist) * r_ji
     return f_i, e
 
 
