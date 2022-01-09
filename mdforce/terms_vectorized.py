@@ -1,159 +1,171 @@
 """
-Implementation of the individual terms of the force field.
+Implementation of the individual terms of a general force field in a vectorized fashion.
+Each function calculates the force on a single target particle `q_i`, due to a number of
+other particles `q_js`, except for `angle_vibration_harmonic`, which takes in three particles
+and calculates the force on each of them.
+Moreover, each function also returns the potential energy of the whole system of particles.
 """
 
+# Standard library
+from typing import Tuple
+
+# 3rd-party
 import numpy as np
 import numpy.linalg as lin
 
 
-def lennard_jones(q_i, q_j, a, b):
+def lennard_jones(
+        q_i: np.ndarray,
+        q_js: np.ndarray,
+        a_ijs: np.ndarray,
+        b_ijs: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, float]:
     """
-    Calculate the Lennard-Jones force between two particles.
+    Calculate the Lennard-Jones potential and the force between
+    one particle and a number of other particles.
 
     Parameters
     ----------
     q_i : numpy.ndarray
-        Coordinates of the target particle.
-    q_j : numpy.ndarray
-        Coordinates of the other particle.
-    a : float
-        A-parameter of the potential.
-    b : float
-        B-parameter of the potential
+        1D-array containing the coordinates of the target particle.
+    q_js : numpy.ndarray
+        2D-array containing the coordinates of other particles.
+    a_ijs : float
+        1D-array containing the A-parameters of the potential between `q_i` and each particle in `q_js`.
+    b_ijs : float
+        1D-array containing the B-parameters of the potential between `q_i` and each particle in `q_js`.
 
     Returns
     -------
-        numpy.ndarray
-        Force vector for the target particle.
-
-    Notes
-    -----
-    The force vector for the other particle
-    will be the same vector as the return value,
-    only with opposite sign.
+    f_i_total, f_js, e_total : Tuple[numpy.ndarray, numpy.ndarray, float]
+        f_i_total: Total force-vector on `q_i`, as a 1D-array with same size as `q_i`.
+        f_js: Force-vector on each particle in `q_js` due to `q_i`, as a 2D-array with same shape as `q_js`.
+        e_total: Total potential energy between `q_i` and all the particles in `q_js`.
     """
-    q_ij = q_i - q_j
-    q_ij_norm = lin.norm(q_i - q_j)
-    repulsive = (12 * a / q_ij_norm ** 14) * q_ij
-    attractive = (-6 * b / q_ij_norm ** 8) * q_ij
-    f_qi = repulsive + attractive
-    return f_qi
+
+    # Calculate common terms
+    r_jsi = q_i - q_js
+    dist = lin.norm(r_jsi, axis=1)
+    inverse_dist_2 = 1 / dist ** 2
+    inverse_dist_6 = inverse_dist_2 ** 3
+
+    # Calculate potential
+    e_attractive = -b_ijs * inverse_dist_6
+    e_repulsive = a_ijs * inverse_dist_6 ** 2
+    e_total = (e_repulsive + e_attractive).sum()
+
+    # Calculate force
+    f_attractive = 6 * e_attractive
+    f_repulsive = 12 * e_repulsive
+    f_i = ((f_attractive + f_repulsive) * inverse_dist_2).reshape(-1, 1) * r_jsi
+    f_js = -f_i
+    f_i_total = f_i.sum(axis=0)
+    return f_i_total, f_js, e_total
 
 
-def coulomb(q, pair_idx, c, k):
+def coulomb(
+        q_i: np.ndarray,
+        q_js: np.ndarray,
+        c_i: float,
+        c_js: np.ndarray,
+        k: float
+) -> Tuple[np.ndarray, np.ndarray, float]:
     """
-    Calculate the total Coulomb potential and force
-    for a number of particles, due to other particles.
+    Calculate the Coulomb potential and the force between
+    one particle and a number of other particles.
 
     Parameters
     ----------
-    q : numpy.ndarray
-        2D array of shape (n, m), containing the coordinates
-        of n particles in an m-dimensional space.
-    pair_idx : numpy.ndarray
-        2D array of shape (p, 2), containing the indices
-        of all pairs of particles in q, between which
-        the Coulomb interaction should be calculated.
-    c : numpy.ndarray
-        1D array of length (n), containing the
-        charges of all particles in q.
+    q_i : numpy.ndarray
+        1D-array containing the coordinates of the target particle.
+    q_js : numpy.ndarray
+        2D-array containing the coordinates of other particles.
+    c_i : float
+        Charge of the target particle 'i'.
+    c_js : numpy.ndarray
+        Charge of each particle in `q_js`.
     k : float
         Coulomb constant, i.e. (1 / 4πε0).
 
     Returns
     -------
-        tuple [numpy.ndarray, numpy.ndarray]
-        Force vectors for all particles, as a 2D array of shape (n, m)
-        followed by potential energy of all particles, as a 1D array of length (n).
-
-    Notes
-    -----
-    For particles in q whose index is not in pair_idx,
-    the respective positions in returned force and potential arrays
-    will be zero.
+    f_i_total, f_js, e_total : Tuple[numpy.ndarray, numpy.ndarray, float]
+        f_i_total: Total force-vector on `q_i`, as a 1D-array with same size as `q_i`.
+        f_js: Force-vector on each particle in `q_js` due to `q_i`, as a 2D-array with same shape as `q_js`.
+        e_total: Total potential energy between `q_i` and all the particles in `q_js`.
     """
 
-    f = np.zeros_like(q)
-    e = np.zeros(q.shape[0])
+    # Calculate common terms
+    r_jsi = q_i - q_js
+    dist = lin.norm(r_jsi)
 
-    i = pair_idx[:, 0]
-    j = pair_idx[:, 1]
-    c_i = c[:, 0]
-    c_j = c[:, 1]
+    # Calculate potential
+    e = k * c_i * c_js / dist
+    e_total = e.sum()
 
-    q_i = q[i]
-    q_j = q[j]
-    q_ij = q_i - q_j
-    q_ij_norm = lin.norm(q_ij, axis=1).reshape(-1, 1)
-
-    e = k * c_i * c_j / q_ij_norm
-
-
-    return f, e
+    # Calculate force
+    f_i = (e / dist ** 2).reshape(-1, 1) * r_jsi
+    f_js = -f_i
+    f_i_total = f_i.sum(axis=0)
+    return f_i_total, f_js, e_total
 
 
-def bond_vibration_harmonic(q_i, q_j, eq_len, k):
+def bond_vibration_harmonic(
+        q_i: np.ndarray,
+        q_js: np.ndarray,
+        eq_dist_ijs: np.ndarray,
+        k_ijs: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, float]:
     """
-    Calculate the bond stretching force between two bonded particles,
-    using the harmonic oscillator model.
+    Calculate the bond vibration potential and the force between
+    one particle and a number of other bonded particles.
 
     Parameters
     ----------
     q_i : numpy.ndarray
-        Coordinates of the target particle.
-    q_j : numpy.ndarray
-        Coordinates of the other particle.
-    eq_len : float
-        Equilibrium bond length
-    k : float
-        Force constant of the harmonic potential.
+        1D-array containing the coordinates of the target particle.
+    q_js : numpy.ndarray
+        2D-array containing the coordinates of other bonded particles.
+    eq_dist_ijs : numpy.ndarray
+        1D-array containing the equilibrium bond lengths between particle 'i' and each particle in `q_js`.
+    k_ijs : numpy.ndarray
+        1D-array containing the force constant of the harmonic potential
+        between particle 'i' and each particle in `q_js`.
 
     Returns
     -------
-        numpy.ndarray
-        Force vector for the target particle.
-
-    Notes
-    -----
-    The force vector for the other particle
-    will be the same vector as the return value,
-    only with opposite sign.
+    f_i_total, f_js, e_total : Tuple[numpy.ndarray, numpy.ndarray, float]
+        f_i_total: Total force-vector on `q_i`, as a 1D-array with same size as `q_i`.
+        f_js: Force-vector on each particle in `q_js` due to `q_i`, as a 2D-array with same shape as `q_js`.
+        e_total: Total potential energy between `q_i` and all the particles in `q_js`.
     """
-    q_ij_norm = lin.norm(q_i - q_j)
-    f_q_i = (k * (q_ij_norm - eq_len) / q_ij_norm) * q_i
-    return f_q_i
+
+    # Calculate common terms
+    r_jsi = q_i - q_js
+    dist = lin.norm(r_jsi)
+    displacement = dist - eq_dist_ijs
+    k_times_displ = k_ijs * displacement
+
+    # Calculate potential
+    e_total = (k_times_displ * displacement / 2).sum()
+
+    # Calculate force
+    f_i = (-k_times_displ / dist).reshape(-1, 1) * r_jsi
+    f_js = -f_i
+    f_i_total = f_i.sum(axis=0)
+    return f_i_total, f_js, e_total
 
 
-def angle_vibration(q_left, q_mid, q_right, theta_eq, k):
-
-    # calculate the angle theta
-    q_rm = q_right - q_mid
-    q_lm = q_left - q_mid
-    q_lm_norm = lin.norm(q_lm)
-    q_rm_norm = lin.norm(q_rm)
-    cos = np.inner(q_lm, q_rm) / (q_lm_norm * q_rm_norm)
-    theta = np.arccos(cos)
-    sin = np.sin(theta)
-
-    a = k * (theta - theta_eq)
-
-    b = q_rm / (q_lm_norm * q_rm_norm)
-    c = cos * q_lm / (q_lm_norm ** 2 * q_rm_norm)
-    f_q_left = a * (b - c) / sin
-
-    b2 = q_lm / (q_lm_norm * q_rm_norm)
-    c2 = cos * q_rm / (q_rm_norm ** 2 * q_lm_norm)
-    f_q_right = a * (b2 - c2) / sin
-
-    b3 = (q_left + q_right - 2 * q_mid) / (q_lm_norm * q_rm_norm)
-    c3 = cos * (q_lm / q_lm_norm ** 2 + q_rm / q_rm_norm ** 2)
-    f_q_mid = a * (b3 - c3) / sin
-    return f_q_left, f_q_mid, f_q_right
+def angle_vibration_harmonic():
+    # TODO
+    pass
 
 
 def dihedral():
+    # TODO
     pass
 
 
 def improper_dihedral():
+    # TODO
     pass
