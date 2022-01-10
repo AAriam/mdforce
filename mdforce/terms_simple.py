@@ -234,7 +234,7 @@ def angle_vibration_harmonic(
     f_r = a * (b2 - c2)
 
     # Calculate f_m
-    b3 = (2 * q_m - q_l - q_r) / dist_ml_mult_dist_mr
+    b3 = -(r_ml + r_mr) / dist_ml_mult_dist_mr
     c3 = cos * (r_ml_div_dist2_ml + r_mr_div_dist2_mr)
     f_m = a * (b3 + c3)
     return f_m, f_l, f_r, e
