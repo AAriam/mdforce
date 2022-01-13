@@ -28,7 +28,7 @@ def check_input_data(
     mol_ids : numpy.ndarray
         1D-array of shape (n, ), containing the ID of the molecule, to which each atom in `q` belongs to.
         IDs should be integers, and each ID should appear 3 times in the array, corresponding to 2 hydrogens
-        and one oxygen atom that comprise that molecule. Otherwise, the actual value of each ID does not play a role.
+        and one oxygen atom that comprise that molecule. Otherwise, the actual value of each ID does not matter.
     atomic_nums : numpy.ndarray
         1D array of shape (n, ), containing the atomic number of each atom in `q`.
         Since this is a water model, the only acceptable values are 1 and 8.
@@ -84,5 +84,52 @@ def check_input_data(
                     pass
             else:
                 pass
-
     return
+
+
+def create_sorting_mask(
+        mol_ids: np.ndarray,
+        atomic_nums: np.ndarray
+) -> np.ndarray:
+    """
+    Create an array of atom indices, where the atoms are first sorted
+    by their molecule-ID, and then by their atom type.
+    This mask should then be applied to the array of atom coordinates, in order to bring it
+    into the form that is accepted by the water model.
+
+    Parameters
+    ----------
+    mol_ids : numpy.ndarray
+        1D-array of shape (n, ), containing the ID of the molecule, to which each atom in `q` belongs to.
+    atomic_nums : numpy.ndarray
+        1D array of shape (n, ), containing the atomic number of each atom in `q`.
+
+    Returns
+    -------
+        numpy.ndarray
+        Index array of all atoms in the input data, first sorted by their molecule-ID, and then by their atom type.
+
+    Examples
+    --------
+    Let's say A_n_m denotes the mth A atom in nth molecule;
+    then an input data `q` = [H_1_1, H_2_1, H_1_2, H_2_2, O_1_1, O_2_1],
+    will have `atomic_nums` = [1, 1, 1, 1, 8, 8]
+    and `mol_ids` = [1, 2, 1, 2, 1, 2].
+    Applying this function to `atom_types` and `mol_ids` will then return:
+    [4, 2, 0, 5, 3, 1]
+    Therefore, applying this index array to `q` will return:
+    [O_1_1, H_1_2, H_1_1, O_2_1, H_2_2, H_2_1]
+    """
+    # Create array of atom indices
+    atom_idx = np.arange(atomic_nums.size)
+    # Calculate new indices when atoms are sorted by their molecule ID
+    atom_idx_sorted_by_mol_id = mol_ids.argsort(kind="stable")
+    # Update atom indices
+    atom_idx = atom_idx[atom_idx_sorted_by_mol_id]
+    # Get array of atom types based on sorting
+    atom_types_sorted = atomic_nums[atom_idx_sorted_by_mol_id]
+    # Calculate new indices when atoms are again sorted, now by their atom type
+    for n in range(0, atom_types_sorted.shape[0] - 2, 3):
+        atom_types_sorted_idx = atom_types_sorted[n:n + 3].argsort(kind="stable") + n
+        atom_idx[n:n + 3][...] = np.flip(atom_idx[atom_types_sorted_idx])
+    return atom_idx
