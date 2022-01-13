@@ -1,201 +1,274 @@
 
 # Standard library
-from typing import Sequence
+from typing import Union, Tuple
 
 # 3rd-party packages
 import numpy as np
-
-# Self
-from ..helpers import check_input_data
 
 
 class ForceField:
     """
     Force-field of the 3-site flexible SPC water model.
+    This force-field is specifically implemented for input data that exclusively contains water molecules.
+    The coordinates vector `q` must be a 2-dimensional numpy array of shape (n, m), where 'n' is the number of
+    atoms (must be a multiple of 3), and 'm' is the number of spatial dimensions. Moreover, the coordinates must be
+    ordered by the molecules, where the coordinates of the oxygen atom comes first.
+    For example, let's say A_n_m denotes the array of coordinates of the mth A atom in nth molecule; then the
+    input data must be in the form: [O_1_1, H_1_1, H_1_2, O_2_1, H_2_1, H_2_2, ...]
+
+    Parameters
+    ----------
+    shape_data : Tuple[int, int]
+        Shape of the coordinates vector 'q', where the first value is the number of atoms (a multiple of 3),
+        and the second value is the number of spatial dimensions of the coordinates.
+    mass_oxygen : Union[float, int, numpy.number]
+        Mass of the oxygen atom.
+    mass_hydrogen : Union[float, int, numpy.number]
+        Mass of the hydrogen atom.
+    coulomb_constant : Union[float, int, numpy.number]
+        Coulomb constant.
+    charge_oxygen : Union[float, int, np.number]
+        Electric charge of the oxygen atom.
+    charge_hydrogen : Union[float, int, np.number]
+        Electric charge of the hydrogen atom.
+    lennard_jones_param_a : Union[float, int, np.number]
+        Lennard-Jones parameter A for the O–O interaction.
+    lennard_jones_param_b : Union[float, int, np.number]
+        Lennard-Jones parameter B for the O–O interaction.
+    bond_force_constant : Union[float, int, np.number]
+        Force constant of the O–H bond vibration.
+    bond_eq_dist : Union[float, int, np.number]
+        Equilibrium bond length of the O–H bond.
+    angle_force_constant : Union[float, int, np.number]
+        Force constant of the H–O–H angle vibration.
+    angle_eq_angle : Union[float, int, np.number]
+        Equilibrium angle of the H–O–H angle.
+
+    Examples
+    --------
+
+
     """
 
     __slots__ = [
-        "q", "mol_ids", "atomic_nums", "bonded_atoms_idx",
-        "k_coulomb", "charges",
-        "force",
-        "energy_lj", "energy_coulomb", "energy_bond_vib", "energy_angle_vib",
-        "angles", "distance_vectors", "distances", "num_atoms",
-        "curr_step"
+        "_acceleration", "_force", "_distances", "_distance_vectors", "_angles",
+        "_energy_coulomb", "_energy_lj", "_energy_bond", "_energy_angle",
+        "_q", "_num_atoms", "_mass_o", "_mass_h", "_coulomb_k", "_charges", "_lj_a", "_lj_b",
+        "_bond_k", "_bond_eq_dist", "_angle_k", "_angle_eq"
     ]
+
+    @classmethod
+    def from_model(cls, shape_data, model):
+        return cls(
+            shape_data=shape_data,
+            mass_oxygen=model._mass_o_converted.value,
+            mass_hydrogen=model._mass_h_converted.value,
+            coulomb_constant=model._coulomb_k_converted.value,
+            charge_oxygen=model._charge_o_converted.value,
+            charge_hydrogen=model._charge_h_converted.value,
+            lennard_jones_param_a=model._lj_a.value,
+            lennard_jones_param_b=model._lj_b.value,
+            bond_force_constant=model._bond_k_oh_converted.value,
+            bond_eq_dist=model._bond_eq_len_oh_converted.value,
+            angle_force_constant=model._angle_k_hoh_converted.value,
+            angle_eq_angle=model._angle_eq_hoh_converted.value
+        )
 
     def __init__(
             self,
-            q: np.ndarray,
-            mol_ids: np.ndarray,
-            atomic_nums: np.ndarray,
-            bonded_atoms_idx: Sequence[np.ndarray],
-            num_steps: int,
+            shape_data: Tuple[int, int],
+            mass_oxygen: Union[float, int, np.number],
+            mass_hydrogen: Union[float, int, np.number],
+            coulomb_constant: Union[float, int, np.number],
+            charge_oxygen: Union[float, int, np.number],
+            charge_hydrogen: Union[float, int, np.number],
+            lennard_jones_param_a: Union[float, int, np.number],
+            lennard_jones_param_b: Union[float, int, np.number],
+            bond_force_constant: Union[float, int, np.number],
+            bond_eq_dist: Union[float, int, np.number],
+            angle_force_constant: Union[float, int, np.number],
+            angle_eq_angle: Union[float, int, np.number]
     ):
-        # Check the input and raise ValueError/TypeError if any discrepancies are found.
-        check_input_data(q, mol_ids, atomic_nums, bonded_atoms_idx)
-
-        self.num_atoms = mol_ids.size
-        self.curr_step = 0
-
-        sort_mask = self._create_sorting_mask(mol_ids, atomic_nums)
-        self.q = q[sort_mask]
-        self.mol_ids = mol_ids[sort_mask]
-        self.atomic_nums = atomic_nums[sort_mask]
-        # self.bonded_atoms_idx = bonded_atoms_idx[sort_mask]
-
-        self.force = np.zeros_like(self.q)
-
-        num_data_points = num_steps + 1
-        self.energy_lj = np.zeros(num_data_points)
-        self.energy_coulomb = np.zeros(num_data_points)
-        self.energy_bond_vib = np.zeros(num_data_points)
-        self.energy_angle_vib = np.zeros(num_data_points)
-
-        self.angles = np.zeros((num_data_points, self.num_atoms//3))
-
-        self.distance_vectors = np.zeros((num_data_points, self.num_atoms, self.num_atoms, self.q.shape[1]))
-        self.distances = np.zeros((num_data_points, self.num_atoms, self.num_atoms))
+        # Store parameters
+        self._mass_o = mass_oxygen
+        self._mass_h = mass_hydrogen
+        self._coulomb_k = coulomb_constant
+        self._charges = np.tile([charge_oxygen, charge_hydrogen, charge_hydrogen], shape_data[0]//3)
+        self._lj_a = lennard_jones_param_a
+        self._lj_b = lennard_jones_param_b
+        self._bond_k = bond_force_constant
+        self._bond_eq_dist = bond_eq_dist
+        self._angle_k = angle_force_constant
+        self._angle_eq = angle_eq_angle
+        # Initialize attributes for storing the data
+        self._num_atoms = shape_data[0]
+        self._q = np.zeros(shape_data)
+        self._acceleration = np.zeros(shape_data)
+        self._force = np.zeros(shape_data)
+        self._distances = np.zeros((shape_data[0], shape_data[0]))
+        self._distance_vectors = np.zeros((shape_data[0], shape_data[0], shape_data[1]))
+        self._angles = np.zeros(shape_data[0] // 3)
+        self._energy_coulomb = self._energy_lj = self._energy_bond = self._energy_angle = 0
 
     @property
-    def force(self):
+    def acceleration(self) -> np.ndarray:
+        return self._acceleration
+
+    @property
+    def force(self) -> np.ndarray:
         return self._force
 
     @property
-    def energy_total(self):
-        return self._e_coulomb + self._e_lj + self._e_bond + self._e_angle
+    def energy_total(self) -> float:
+        return self._energy_coulomb + self._energy_lj + self._energy_bond + self._energy_angle
 
     @property
-    def energy_coulomb(self):
-        return self._e_coulomb
+    def energy_coulomb(self) -> float:
+        return self._energy_coulomb
 
     @property
-    def energy_lennard_jones(self):
-        return self._e_lj
+    def energy_lennard_jones(self) -> float:
+        return self._energy_lj
 
     @property
-    def energy_bond_vibration(self):
-        return self._e_bond
+    def energy_bond_vibration(self) -> float:
+        return self._energy_bond
 
     @property
-    def energy_angle_vibration(self):
-        return self._e_angle
+    def energy_angle_vibration(self) -> float:
+        return self._energy_angle
 
     @property
-    def distances(self):
+    def distances(self) -> np.ndarray:
         return self._distances
 
     @property
-    def distance_vectors(self):
-        return self._distant_vectors
+    def distance_vectors(self) -> np.ndarray:
+        return self._distance_vectors
 
     @property
-    def bond_angles(self):
+    def bond_angles(self) -> np.ndarray:
         return self._angles
 
-    def update(self, q):
-        self._q[...] = q
-        self.coulomb()
-        self.lennard_jones()
-        self.bond_vibration_harmonic()
-        self.angle_vibration_harmonic()
+    def update(self, q: np.ndarray) -> None:
+        self.new_state(q)
+        self.update_distances()
+        self.update_forces_energies()
+        self.update_acceleration()
         return
 
-    def coulomb(self):
+    def new_state(self, q: np.ndarray) -> None:
+        self._q[...] = q
+        self._force[...] = 0
+        self._energy_coulomb = self._energy_lj = self._energy_bond = self._energy_angle = 0
+        return
 
-        for idx_curr_atom, coord in enumerate(self.q[:-3]):
+    def update_acceleration(self):
+        self._acceleration[::3] = self._force[::3] / self._mass_o
+        self._acceleration[1::3] = self._force[1::3] / self._mass_h
+        self._acceleration[2::3] = self._force[2::3] / self._mass_h
+        return
+
+    def update_forces_energies(self) -> None:
+        self.update_coulomb()
+        self.update_lennard_jones()
+        self.update_bond_vibration()
+        self.update_angle_vibration()
+        return
+
+    def update_coulomb(self) -> None:
+
+        for idx_curr_atom in range(self._num_atoms - 3):
 
             idx_first_interacting_atom = idx_curr_atom + 3 - idx_curr_atom % 3
-            dists = self.distances[self.curr_step, idx_curr_atom, idx_first_interacting_atom:]
-            dist_vectors = self.distance_vectors[self.curr_step, idx_curr_atom, idx_first_interacting_atom:]
+            dists = self._distances[idx_curr_atom, idx_first_interacting_atom:]
+            dist_vectors = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom:]
 
-            e = self.k_coulomb * self.charges[idx_curr_atom] * self.charges[idx_first_interacting_atom:] / dists
-            self.energy_coulomb[self.curr_step] += e
+            energy = self._coulomb_k * self._charges[idx_curr_atom] * self._charges[idx_first_interacting_atom:] / dists
+            self._energy_coulomb += energy.sum()
 
-            f = (e / dists ** 2).reshape(-1, 1) * dist_vectors
-            self.force[idx_curr_atom] += f.sum(axis=0)
-            self.force[idx_first_interacting_atom:] += -f
+            f = (energy / dists ** 2).reshape(-1, 1) * dist_vectors
+            self._force[idx_curr_atom] += f.sum(axis=0)
+            self._force[idx_first_interacting_atom:] += -f
         return
 
-    def lennard_jones(self):
+    def update_lennard_jones(self) -> None:
 
-        for idx_curr_atom in range(0, self.num_atoms - 3, 3):
+        for idx_curr_atom in range(0, self._num_atoms - 3, 3):
             idx_first_interacting_atom = idx_curr_atom + 3
-            dists = self.distances[self.curr_step, idx_curr_atom, idx_first_interacting_atom::3]
-            dist_vectors = self.distance_vectors[self.curr_step, idx_curr_atom, idx_first_interacting_atom::3]
+            dists = self._distances[idx_curr_atom, idx_first_interacting_atom::3]
+            dist_vectors = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom::3]
 
             inverse_dist_2 = 1 / dists ** 2
             inverse_dist_6 = inverse_dist_2 ** 3
 
             # Calculate potential
-            e_attractive = -self.params["lj_b"] * inverse_dist_6
-            e_repulsive = self.params["lj_a"] * inverse_dist_6 ** 2
-            self.energy_lj[self.curr_step] += (e_repulsive + e_attractive).sum()
+            e_attractive = -self._lj_b * inverse_dist_6
+            e_repulsive = self._lj_a * inverse_dist_6 ** 2
+            self._energy_lj += (e_repulsive + e_attractive).sum()
 
             # Calculate force
             f_attractive = 6 * e_attractive
             f_repulsive = 12 * e_repulsive
             f = ((f_attractive + f_repulsive) * inverse_dist_2).reshape(-1, 1) * dist_vectors
-            self.force[idx_curr_atom] += f.sum(axis=0)
-            self.force[idx_first_interacting_atom::3] += -f
+            self._force[idx_curr_atom] += f.sum(axis=0)
+            self._force[idx_first_interacting_atom::3] += -f
         return
 
-    def bond_vibration_harmonic(self):
+    def update_bond_vibration(self) -> None:
 
-        for idx_curr_atom in range(0, self.num_atoms, 3):
-            dists = self.distances[self.curr_step, idx_curr_atom, idx_curr_atom + 1:idx_curr_atom + 3]
-            dist_vectors = self.distance_vectors[self.curr_step, idx_curr_atom, idx_curr_atom + 1:idx_curr_atom + 3]
-            displacements = dists - self.params["bond_eq_dist"]
-            k_times_displacements = self.params["bond_vib_k"]
+        for idx_curr_atom in range(0, self._num_atoms, 3):
+            dists = self._distances[idx_curr_atom, idx_curr_atom + 1:idx_curr_atom + 3]
+            dist_vectors = self._distance_vectors[idx_curr_atom, idx_curr_atom + 1:idx_curr_atom + 3]
+            displacements = dists - self._bond_eq_dist
+            k_times_displacements = self._bond_k * displacements
 
-            e = (k_times_displacements * displacements / 2).sum()
-            self.energy_bond_vib[self.curr_step] += e
+            self._energy_bond += (k_times_displacements * displacements / 2).sum()
 
             f = (-k_times_displacements / dists).reshape(-1, 1) * dist_vectors
-            self.force[idx_curr_atom] += f.sum(axis=0)
-            self.force[idx_curr_atom + 1:idx_curr_atom + 3] += -f
+            self._force[idx_curr_atom] += f.sum(axis=0)
+            self._force[idx_curr_atom + 1:idx_curr_atom + 3] += -f
         return
 
-    def angle_vibration_harmonic(self):
+    def update_angle_vibration(self) -> None:
 
-        for idx_curr_atom in range(0, self.num_atoms, 3):
-            r_ml = -self.distance_vectors[self.curr_step, idx_curr_atom, idx_curr_atom + 1]
-            r_mr = -self.distance_vectors[self.curr_step, idx_curr_atom, idx_curr_atom + 2]
-            dist_ml = self.distances[self.curr_step, idx_curr_atom, idx_curr_atom + 1]
-            dist_mr = self.distances[self.curr_step, idx_curr_atom, idx_curr_atom + 2]
+        for idx_curr_atom in range(0, self._num_atoms, 3):
+            r_ml = -self._distance_vectors[idx_curr_atom, idx_curr_atom + 1]
+            r_mr = -self._distance_vectors[idx_curr_atom, idx_curr_atom + 2]
+            dist_ml = self._distances[idx_curr_atom, idx_curr_atom + 1]
+            dist_mr = self._distances[idx_curr_atom, idx_curr_atom + 2]
             cos = np.dot(r_ml, r_mr) / (dist_ml * dist_mr)
             angle = np.arccos(cos)
-            self.angles[self.curr_step, idx_curr_atom//3] = angle
+            self._angles[idx_curr_atom//3] = angle
 
             # Calculate common terms
             sin = np.sin(angle)
-            angle_displacement = angle - self.params["angle_eq"]
-            a = self.params["angle_vib_k"] * angle_displacement / sin
+            angle_displacement = angle - self._angle_eq
+            a = self._angle_k * angle_displacement / sin
             dist_ml_mult_dist_mr = dist_ml * dist_mr
             r_ml_div_dist2_ml = r_ml / dist_ml ** 2
             r_mr_div_dist2_mr = r_mr / dist_mr ** 2
 
             # Calculate potential
-            self.energy_angle_vib[self.curr_step] += self.params["angle_vib_k"] * angle_displacement ** 2
+            self._energy_angle += self._angle_k * angle_displacement ** 2
 
             # Calculate f_l
             b1 = r_mr / dist_ml_mult_dist_mr
             c1 = cos * r_ml_div_dist2_ml
-            self.force[idx_curr_atom + 1] += a * (b1 - c1)
+            self._force[idx_curr_atom + 1] += a * (b1 - c1)
 
             # Calculate f_r
             b2 = r_ml / dist_ml_mult_dist_mr
             c2 = cos * r_mr_div_dist2_mr
-            self.force[idx_curr_atom + 2] += a * (b2 - c2)
+            self._force[idx_curr_atom + 2] += a * (b2 - c2)
 
             # Calculate f_m
-            b3 = (
-                2 * self.q[idx_curr_atom] - self.q[idx_curr_atom + 1] - self.q[idx_curr_atom + 2]
-            ) / dist_ml_mult_dist_mr
+            b3 = -(r_ml + r_mr) / dist_ml_mult_dist_mr
             c3 = cos * (r_ml_div_dist2_ml + r_mr_div_dist2_mr)
-            self.force[idx_curr_atom] = a * (b3 + c3)
+            self._force[idx_curr_atom] = a * (b3 + c3)
         return
 
-    def calculate_distances(self) -> None:
+    def update_distances(self) -> None:
         """
         Calculate the distance vector and distance between all unique pairs of atoms at the current step.
 
@@ -211,54 +284,7 @@ class ForceField:
         Distances 'q_i - q_j` where 'i' is larger than 'j' are equal to the negative value of 'q_j - q_i'.
         """
 
-        for idx, coord in enumerate(self.q[:-1]):
-            self.distance_vectors[self.curr_step, idx, idx + 1:] = coord - self.q[idx + 1:]
-
-        self.distances[self.curr_step] = np.linalg.norm(self.distance_vectors[self.curr_step], axis=2)
+        for idx, coord in enumerate(self._q[:-1]):
+            self._distance_vectors[idx, idx + 1:] = coord - self._q[idx + 1:]
+        self._distances[...] = np.linalg.norm(self._distance_vectors, axis=2)
         return
-
-    @staticmethod
-    def _create_sorting_mask(
-            mol_ids: np.ndarray,
-            atomic_nums: np.ndarray
-    ) -> np.ndarray:
-        """
-        Create an array of atom indices, where the atoms are first sorted
-        by their molecule-ID, and then by their atom type.
-
-        Parameters
-        ----------
-        mol_ids : numpy.ndarray
-            1D-array of shape (n, ), containing the ID of the molecule, to which each atom in `q` belongs to.
-        atomic_nums : numpy.ndarray
-            1D array of shape (n, ), containing the atomic number of each atom in `q`.
-
-        Returns
-        -------
-            numpy.ndarray
-            Index array of all atoms in the input data, first sorted by their molecule-ID, and then by their atom type.
-
-        Examples
-        --------
-        Let's say A_n_m denotes the nth A atom in mth molecule;
-        then an input data `q` = [H_1_1, H_1_2, H_2_1, H_2_2, O_1_1, O_1_2],
-        will have `atom_types` = [1, 1, 1, 1, 8, 8]
-        and `mol_ids` = [1, 2, 1, 2, 1, 2].
-        Applying this function to `atom_types` and `mol_ids` will then return:
-        [0, 2, 4, 1, 3, 5]
-        Therefore, applying this index array to `q` will return:
-        [H_1_1, H_2_1, O_1_1, H_1_2, H_2_2, O_1_2]
-        """
-        # Create array of atom indices
-        atom_idx = np.arange(atomic_nums.size)
-        # Calculate new indices when atoms are sorted by their molecule ID
-        atom_idx_sorted_by_mol_id = mol_ids.argsort()
-        # Update atom indices
-        atom_idx = atom_idx[atom_idx_sorted_by_mol_id]
-        # Get array of atom types based on sorting
-        atom_types_sorted = atomic_nums[atom_idx_sorted_by_mol_id]
-        # Calculate new indices when atoms are again sorted, now by their atom type
-        for n in range(0, atom_types_sorted.shape[0] - 2, 3):
-            atom_types_sorted_idx = atom_types_sorted[n:n + 3].argsort() + n
-            atom_idx[n:n + 3][...] = np.flip(atom_idx[atom_types_sorted_idx])
-        return atom_idx
