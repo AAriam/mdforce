@@ -1,2 +1,2 @@
-from ._read_params import Parameters
-from ._create_force_field import parametrize
+from .force_field_v2 import ForceField
+from .parameters import ModelParameters
