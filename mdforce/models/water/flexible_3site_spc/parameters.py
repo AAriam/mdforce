@@ -13,7 +13,7 @@ from duq.quantity import Quantity
 from duq.quantity import predefined as consts
 
 # Self
-from ....element_masses import masses
+from ....data.element_masses import masses
 
 
 class ModelParameters:
