@@ -5,6 +5,9 @@ from typing import Union, Tuple
 # 3rd-party packages
 import numpy as np
 
+# Self
+from . import parameters
+
 
 class ForceField:
     """
@@ -51,6 +54,12 @@ class ForceField:
         "_q", "_num_atoms", "_mass_o", "_mass_h", "_coulomb_k", "_charges", "_lj_a", "_lj_b",
         "_bond_k", "_bond_eq_dist", "_angle_k", "_angle_eq"
     ]
+
+    @classmethod
+    def from_model_name(cls, shape_data, model_name, unit_length, unit_time, unit_mass="Da", unit_charge="e"):
+        model = parameters.ModelParameters(model_name)
+        model.unify_units(unit_length, unit_time, unit_mass, unit_charge)
+        return cls.from_model(shape_data, model)
 
     @classmethod
     def from_model(cls, shape_data, model):
