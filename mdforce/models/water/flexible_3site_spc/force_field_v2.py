@@ -43,11 +43,6 @@ class ForceField:
         Force constant of the H–O–H angle vibration.
     angle_eq_angle : Union[float, int, np.number]
         Equilibrium angle of the H–O–H angle.
-
-    Examples
-    --------
-
-
     """
 
     __slots__ = [
