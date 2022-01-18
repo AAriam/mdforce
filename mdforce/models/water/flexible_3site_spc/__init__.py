@@ -1,2 +1,2 @@
-from .force_field_v2 import ForceField
+from .force_field import ForceField
 from .parameters import ModelParameters
