@@ -26,6 +26,14 @@ class ModelParameters:
         Name of the model from the dataframe.
     """
 
+    _dataframe = pd.read_pickle(Path(__file__).parent / "params.pkl")
+
+    @classmethod
+    def available_models(cls):
+        for name in cls._dataframe.index[1:]:
+            model = cls(name)
+            print(model.model_metadata + "\n")
+
     def __init__(self, model_name):
 
         self._name = model_name
@@ -38,31 +46,27 @@ class ModelParameters:
         self._coulomb_k = consts.coulomb_const
         self._coulomb_k_converted = None
 
-        here = Path(__file__).parent
-        df = pd.read_pickle(here/"params.pkl")
-        self._dataframe = df
+        self._desc_charge_o = self._dataframe.loc["Description", ("Parameters", "Coulomb", "q_O")]
+        self._desc_charge_h = self._dataframe.loc["Description", ("Parameters", "Coulomb", "q_H")]
+        self._desc_lj_epsilon_oo = self._dataframe.loc["Description", ("Parameters", "Lennard-Jones", "ε_OO")]
+        self._desc_lj_sigma_oo = self._dataframe.loc["Description", ("Parameters", "Lennard-Jones", "σ_OO")]
+        self._desc_bond_k_oh = self._dataframe.loc["Description", ("Parameters", "Bond vibration", "k")]
+        self._desc_bond_eq_len_oh = self._dataframe.loc["Description", ("Parameters", "Bond vibration", "r_OH")]
+        self._desc_angle_k_hoh = self._dataframe.loc["Description", ("Parameters", "Angle vibration", "k")]
+        self._desc_angle_eq_hoh = self._dataframe.loc["Description", ("Parameters", "Angle vibration", "θ_HOH")]
+        self._description = self._dataframe.loc[model_name, ("Metadata", "Info", "Description")]
+        self._ref_name = self._dataframe.loc[model_name, ("Metadata", "Reference", "Name")]
+        self._ref_cite = self._dataframe.loc[model_name, ("Metadata", "Reference", "Citation")]
+        self._ref_link = self._dataframe.loc[model_name, ("Metadata", "Reference", "Link")]
 
-        self._desc_charge_o = df.loc["Description", ("Parameters", "Coulomb", "q_O")]
-        self._desc_charge_h = df.loc["Description", ("Parameters", "Coulomb", "q_H")]
-        self._desc_lj_epsilon_oo = df.loc["Description", ("Parameters", "Lennard-Jones", "ε_OO")]
-        self._desc_lj_sigma_oo = df.loc["Description", ("Parameters", "Lennard-Jones", "σ_OO")]
-        self._desc_bond_k_oh = df.loc["Description", ("Parameters", "Bond vibration", "k")]
-        self._desc_bond_eq_len_oh = df.loc["Description", ("Parameters", "Bond vibration", "r_OH")]
-        self._desc_angle_k_hoh = df.loc["Description", ("Parameters", "Angle vibration", "k")]
-        self._desc_angle_eq_hoh = df.loc["Description", ("Parameters", "Angle vibration", "θ_HOH")]
-        self._description = df.loc[model_name, ("Metadata", "Info", "Description")]
-        self._ref_name = df.loc[model_name, ("Metadata", "Reference", "Name")]
-        self._ref_cite = df.loc[model_name, ("Metadata", "Reference", "Citation")]
-        self._ref_link = df.loc[model_name, ("Metadata", "Reference", "Link")]
-
-        charge_o = df.loc[model_name, ("Parameters", "Coulomb", "q_O")].split()
-        charge_h = df.loc[model_name, ("Parameters", "Coulomb", "q_H")].split()
-        lj_epsilon_oo = df.loc[model_name, ("Parameters", "Lennard-Jones", "ε_OO")].split()
-        lj_sigma_oo = df.loc[model_name, ("Parameters", "Lennard-Jones", "σ_OO")].split()
-        bond_k_oh = df.loc[model_name, ("Parameters", "Bond vibration", "k")].split()
-        bond_eq_len_oh = df.loc[model_name, ("Parameters", "Bond vibration", "r_OH")].split()
-        angle_k_hoh = df.loc[model_name, ("Parameters", "Angle vibration", "k")].split()
-        angle_eq_hoh = df.loc[model_name, ("Parameters", "Angle vibration", "θ_HOH")].split()
+        charge_o = self._dataframe.loc[model_name, ("Parameters", "Coulomb", "q_O")].split()
+        charge_h = self._dataframe.loc[model_name, ("Parameters", "Coulomb", "q_H")].split()
+        lj_epsilon_oo = self._dataframe.loc[model_name, ("Parameters", "Lennard-Jones", "ε_OO")].split()
+        lj_sigma_oo = self._dataframe.loc[model_name, ("Parameters", "Lennard-Jones", "σ_OO")].split()
+        bond_k_oh = self._dataframe.loc[model_name, ("Parameters", "Bond vibration", "k")].split()
+        bond_eq_len_oh = self._dataframe.loc[model_name, ("Parameters", "Bond vibration", "r_OH")].split()
+        angle_k_hoh = self._dataframe.loc[model_name, ("Parameters", "Angle vibration", "k")].split()
+        angle_eq_hoh = self._dataframe.loc[model_name, ("Parameters", "Angle vibration", "θ_HOH")].split()
 
         self._charge_o = Quantity(float(charge_o[0]), charge_o[1])
         self._charge_o_converted = None
