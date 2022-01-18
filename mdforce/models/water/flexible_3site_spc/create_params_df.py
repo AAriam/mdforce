@@ -1,6 +1,7 @@
 """
 Module to construct the parameters dataframe for different flexible-3site-SPC water models.
-This is only used once to create the dataframe `params.pkl`, but not needed afterwards.
+This is only used once to create the dataframe `params.pkl`, but not needed afterwards,
+unless other model parameters are to be added to the dataframe.
 """
 
 # 3rd-party packages
