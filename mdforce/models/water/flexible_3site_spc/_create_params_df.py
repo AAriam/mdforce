@@ -11,21 +11,16 @@ import pandas as pd
 columns = [
     ("Parameters", "Coulomb", "q_O"),
     ("Parameters", "Coulomb", "q_H"),
-
     ("Parameters", "Lennard-Jones", "ε_OO"),
     ("Parameters", "Lennard-Jones", "σ_OO"),
-
     ("Parameters", "Bond vibration", "k"),
     ("Parameters", "Bond vibration", "r_OH"),
-
     ("Parameters", "Angle vibration", "k"),
     ("Parameters", "Angle vibration", "θ_HOH"),
-
     ("Metadata", "Info", "Description"),
-
     ("Metadata", "Reference", "Name"),
     ("Metadata", "Reference", "Citation"),
-    ("Metadata", "Reference", "Link")
+    ("Metadata", "Reference", "Link"),
 ]
 
 # Create the empty dataframe
@@ -46,7 +41,7 @@ df.loc["Description"] = [
     "Short description of the model",
     "Name of the publication",
     "Citation of the publication",
-    "Link to the publication"
+    "Link to the publication",
 ]
 
 
@@ -64,7 +59,7 @@ df.loc["SPC/Fw"] = [
     "A new flexible three-site water model to better reflect dynamical and dielectric properties of bulk water.",
     "Flexible simple point-charge water model with improved liquid-state properties",
     "Y. Wu, H. L. Tepper, G. A. Voth, J. Chem. Phys. 2006, 124, 024503.",
-    "https://doi.org/10.1063/1.2136877"
+    "https://doi.org/10.1063/1.2136877",
 ]
 
 
@@ -80,7 +75,7 @@ df.loc["SPC/Fd"] = [
     "",
     "Simple intramolecular model potentials for water",
     "L. X. Dang, B. M. Pettitt, J. Phys. Chem. 1987, 91, 12, 3349–3354.",
-    "https://doi.org/10.1021/j100296a048"
+    "https://doi.org/10.1021/j100296a048",
 ]
 
 df.loc["TIP3P/Fs"] = [
@@ -95,7 +90,7 @@ df.loc["TIP3P/Fs"] = [
     "",
     "The computer simulation of proton transport in water",
     "U. W. Schmitt, G. A. Voth, J. Chem. Phys. 1999, 111, 9361.",
-    "https://doi.org/10.1063/1.480032"
+    "https://doi.org/10.1063/1.480032",
 ]
 
 # Save dataframe to pickle file

@@ -10,10 +10,7 @@ import numpy.linalg as lin
 
 
 def lennard_jones(
-        q_i: np.ndarray,
-        q_j: np.ndarray,
-        a: float,
-        b: float
+    q_i: np.ndarray, q_j: np.ndarray, a: float, b: float
 ) -> tuple[np.ndarray, float]:
     """
     Calculate the Lennard-Jones potential between two particles,
@@ -63,11 +60,7 @@ def lennard_jones(
 
 
 def coulomb(
-        q_i: np.ndarray,
-        q_j: np.ndarray,
-        c_i: float,
-        c_j: float,
-        k: float
+    q_i: np.ndarray, q_j: np.ndarray, c_i: float, c_j: float, k: float
 ) -> tuple[np.ndarray, float]:
     """
     Calculate the Coulomb potential between two particles,
@@ -113,10 +106,7 @@ def coulomb(
 
 
 def bond_vibration_harmonic(
-        q_i: np.ndarray,
-        q_j: np.ndarray,
-        dist_eq: float,
-        k: float
+    q_i: np.ndarray, q_j: np.ndarray, dist_eq: float, k: float
 ) -> tuple[np.ndarray, float]:
     """
     Calculate the harmonic bond-stretching potential between two bonded particles,
@@ -162,11 +152,7 @@ def bond_vibration_harmonic(
 
 
 def angle_vibration_harmonic(
-        q_m: np.ndarray,
-        q_l: np.ndarray,
-        q_r: np.ndarray,
-        angle_eq: float,
-        k: float
+    q_m: np.ndarray, q_l: np.ndarray, q_r: np.ndarray, angle_eq: float, k: float
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
     """
     Calculate the harmonic angle-vibration potential between three linearly bonded particles,
@@ -209,7 +195,9 @@ def angle_vibration_harmonic(
     elif np.isclose(cos, -1):
         cos = -1
     else:
-        raise ValueError(f"Calculated cosine {cos} does not lie within the range of [-1, 1].")
+        raise ValueError(
+            f"Calculated cosine {cos} does not lie within the range of [-1, 1]."
+        )
     angle = np.arccos(cos)
 
     # Calculate common terms

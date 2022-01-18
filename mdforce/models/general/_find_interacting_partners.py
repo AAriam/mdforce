@@ -138,9 +138,11 @@ def coulomb(mol_ids):
         # Filter the index of partners to contain only those with higher index
         partners_idx_unique = partners_idx[mask_unique_pairs]
         # Assign the index of current atom to `pairs_idx`
-        pairs_idx[first_empty_idx: first_empty_idx + partners_idx_unique.size, 0] = idx
+        pairs_idx[first_empty_idx : first_empty_idx + partners_idx_unique.size, 0] = idx
         # Assign all indices of interacting partners to `pairs_idx`
-        pairs_idx[first_empty_idx:first_empty_idx + partners_idx_unique.size, 1][...] = partners_idx_unique
+        pairs_idx[first_empty_idx : first_empty_idx + partners_idx_unique.size, 1][
+            ...
+        ] = partners_idx_unique
         # Update the index of first empty entry in `pairs_idx`
         first_empty_idx += partners_idx_unique.size
     return pairs_idx
@@ -181,11 +183,13 @@ def lennard_jones(atom_ids):
     # Iterate over all oxygen indices
     for elem_idx, oxygen_idx in enumerate(oxygens_idx):
         # Take the remaining of the array as partners indices
-        partners_idx = oxygens_idx[elem_idx+1:]
+        partners_idx = oxygens_idx[elem_idx + 1 :]
         # Assign the index of current oxygen to `pairs_idx`
-        pairs_idx[first_empty_idx:first_empty_idx + partners_idx.size, 0] = oxygen_idx
+        pairs_idx[first_empty_idx : first_empty_idx + partners_idx.size, 0] = oxygen_idx
         # Assign all indices of interacting partners to `pairs_idx`
-        pairs_idx[first_empty_idx:first_empty_idx + partners_idx.size, 1][...] = partners_idx
+        pairs_idx[first_empty_idx : first_empty_idx + partners_idx.size, 1][
+            ...
+        ] = partners_idx
         # Update the index of first empty entry in `pairs_idx`
         first_empty_idx += partners_idx.size
     return pairs_idx
@@ -229,9 +233,13 @@ def bond_vibration(bonded_atoms_idx):
         # Filter the index of bonded partners to contain only those with higher index
         partners_idx_unique = bonded_atoms_idx_list[mask_unique_pairs]
         # Assign the index of current atom to `pairs_idx`
-        pairs_idx[first_empty_idx:first_empty_idx + partners_idx_unique.size, 0] = atom_idx
+        pairs_idx[
+            first_empty_idx : first_empty_idx + partners_idx_unique.size, 0
+        ] = atom_idx
         # Assign all indices of bonded partners to `pairs_idx`
-        pairs_idx[first_empty_idx:first_empty_idx + partners_idx_unique.size, 1][...] = partners_idx_unique
+        pairs_idx[first_empty_idx : first_empty_idx + partners_idx_unique.size, 1][
+            ...
+        ] = partners_idx_unique
         # Update the index of first empty entry in `pairs_idx`
         first_empty_idx += partners_idx_unique.size
     return pairs_idx
@@ -276,5 +284,3 @@ def angle_vibration(bonded_atoms_idx):
             pairs_idx[first_empty_idx][1:][...] = bonded_atoms_idx_list
             first_empty_idx += 1
     return pairs_idx
-
-

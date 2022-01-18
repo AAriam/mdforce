@@ -10,10 +10,10 @@ import numpy as np
 
 
 def raise_for_input_criteria(
-        q: np.ndarray,
-        mol_ids: np.ndarray,
-        atomic_nums: np.ndarray,
-        bonded_atoms_idxs: Sequence[np.ndarray]
+    q: np.ndarray,
+    mol_ids: np.ndarray,
+    atomic_nums: np.ndarray,
+    bonded_atoms_idxs: Sequence[np.ndarray],
 ):
     """
     Check the input data for any discrepancies and raise an Error if any is found.
@@ -47,20 +47,26 @@ def raise_for_input_criteria(
         raise TypeError("Data-type of `q` should be either float or integer.")
     elif not isinstance(mol_ids, np.ndarray):
         raise TypeError("Type of `mol_ids` should be numpy.ndarray.")
-    elif mol_ids.dtype.kind not in np.typecodes['AllInteger']:
+    elif mol_ids.dtype.kind not in np.typecodes["AllInteger"]:
         raise TypeError("Data-type of `mol_ids` should be integer.")
     elif not isinstance(atomic_nums, np.ndarray):
         raise TypeError("Type of `atomic_nums` should be numpy.ndarray.")
-    elif atomic_nums.dtype.kind not in np.typecodes['AllInteger']:
+    elif atomic_nums.dtype.kind not in np.typecodes["AllInteger"]:
         raise TypeError("Data-type of `atomic_nums` should be integer.")
     elif not isinstance(bonded_atoms_idxs, (Sequence, np.ndarray)):
-        raise TypeError("Type of `bonded_atoms_idxs` should be Sequence or numpy.ndarray.")
+        raise TypeError(
+            "Type of `bonded_atoms_idxs` should be Sequence or numpy.ndarray."
+        )
     else:
         for indices in bonded_atoms_idxs:
             if not isinstance(indices, np.ndarray):
-                raise TypeError("Type of each element of array `bonded_atoms_idxs` should be numpy.ndarray.")
+                raise TypeError(
+                    "Type of each element of array `bonded_atoms_idxs` should be numpy.ndarray."
+                )
             elif indices.dtype.kind not in np.typecodes["AllInteger"]:
-                raise TypeError("Sub-arrays in `bonded_atoms_idxs` should have an integer type.")
+                raise TypeError(
+                    "Sub-arrays in `bonded_atoms_idxs` should have an integer type."
+                )
             else:
                 pass
 
@@ -74,7 +80,9 @@ def raise_for_input_criteria(
     else:
         for indices in bonded_atoms_idxs:
             if indices.ndim != 1:
-                raise ValueError("Each element of array `bonded_atoms_idxs` should be a 1D-array.")
+                raise ValueError(
+                    "Each element of array `bonded_atoms_idxs` should be a 1D-array."
+                )
             else:
                 pass
 

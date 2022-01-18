@@ -15,10 +15,7 @@ import numpy.linalg as lin
 
 
 def lennard_jones(
-        q_i: np.ndarray,
-        q_js: np.ndarray,
-        a_ijs: np.ndarray,
-        b_ijs: np.ndarray
+    q_i: np.ndarray, q_js: np.ndarray, a_ijs: np.ndarray, b_ijs: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, float]:
     """
     Calculate the Lennard-Jones potential and the force between
@@ -64,11 +61,7 @@ def lennard_jones(
 
 
 def coulomb(
-        q_i: np.ndarray,
-        q_js: np.ndarray,
-        c_i: float,
-        c_js: np.ndarray,
-        k: float
+    q_i: np.ndarray, q_js: np.ndarray, c_i: float, c_js: np.ndarray, k: float
 ) -> Tuple[np.ndarray, np.ndarray, float]:
     """
     Calculate the Coulomb potential and the force between
@@ -111,10 +104,7 @@ def coulomb(
 
 
 def bond_vibration_harmonic(
-        q_i: np.ndarray,
-        q_js: np.ndarray,
-        eq_dist_ijs: np.ndarray,
-        k_ijs: np.ndarray
+    q_i: np.ndarray, q_js: np.ndarray, eq_dist_ijs: np.ndarray, k_ijs: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, float]:
     """
     Calculate the bond vibration potential and the force between

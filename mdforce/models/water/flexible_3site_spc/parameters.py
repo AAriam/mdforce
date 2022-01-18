@@ -46,27 +46,67 @@ class ModelParameters:
         self._coulomb_k = consts.coulomb_const
         self._coulomb_k_converted = None
 
-        self._desc_charge_o = self._dataframe.loc["Description", ("Parameters", "Coulomb", "q_O")]
-        self._desc_charge_h = self._dataframe.loc["Description", ("Parameters", "Coulomb", "q_H")]
-        self._desc_lj_epsilon_oo = self._dataframe.loc["Description", ("Parameters", "Lennard-Jones", "ε_OO")]
-        self._desc_lj_sigma_oo = self._dataframe.loc["Description", ("Parameters", "Lennard-Jones", "σ_OO")]
-        self._desc_bond_k_oh = self._dataframe.loc["Description", ("Parameters", "Bond vibration", "k")]
-        self._desc_bond_eq_len_oh = self._dataframe.loc["Description", ("Parameters", "Bond vibration", "r_OH")]
-        self._desc_angle_k_hoh = self._dataframe.loc["Description", ("Parameters", "Angle vibration", "k")]
-        self._desc_angle_eq_hoh = self._dataframe.loc["Description", ("Parameters", "Angle vibration", "θ_HOH")]
-        self._description = self._dataframe.loc[model_name, ("Metadata", "Info", "Description")]
-        self._ref_name = self._dataframe.loc[model_name, ("Metadata", "Reference", "Name")]
-        self._ref_cite = self._dataframe.loc[model_name, ("Metadata", "Reference", "Citation")]
-        self._ref_link = self._dataframe.loc[model_name, ("Metadata", "Reference", "Link")]
+        self._desc_charge_o = self._dataframe.loc[
+            "Description", ("Parameters", "Coulomb", "q_O")
+        ]
+        self._desc_charge_h = self._dataframe.loc[
+            "Description", ("Parameters", "Coulomb", "q_H")
+        ]
+        self._desc_lj_epsilon_oo = self._dataframe.loc[
+            "Description", ("Parameters", "Lennard-Jones", "ε_OO")
+        ]
+        self._desc_lj_sigma_oo = self._dataframe.loc[
+            "Description", ("Parameters", "Lennard-Jones", "σ_OO")
+        ]
+        self._desc_bond_k_oh = self._dataframe.loc[
+            "Description", ("Parameters", "Bond vibration", "k")
+        ]
+        self._desc_bond_eq_len_oh = self._dataframe.loc[
+            "Description", ("Parameters", "Bond vibration", "r_OH")
+        ]
+        self._desc_angle_k_hoh = self._dataframe.loc[
+            "Description", ("Parameters", "Angle vibration", "k")
+        ]
+        self._desc_angle_eq_hoh = self._dataframe.loc[
+            "Description", ("Parameters", "Angle vibration", "θ_HOH")
+        ]
+        self._description = self._dataframe.loc[
+            model_name, ("Metadata", "Info", "Description")
+        ]
+        self._ref_name = self._dataframe.loc[
+            model_name, ("Metadata", "Reference", "Name")
+        ]
+        self._ref_cite = self._dataframe.loc[
+            model_name, ("Metadata", "Reference", "Citation")
+        ]
+        self._ref_link = self._dataframe.loc[
+            model_name, ("Metadata", "Reference", "Link")
+        ]
 
-        charge_o = self._dataframe.loc[model_name, ("Parameters", "Coulomb", "q_O")].split()
-        charge_h = self._dataframe.loc[model_name, ("Parameters", "Coulomb", "q_H")].split()
-        lj_epsilon_oo = self._dataframe.loc[model_name, ("Parameters", "Lennard-Jones", "ε_OO")].split()
-        lj_sigma_oo = self._dataframe.loc[model_name, ("Parameters", "Lennard-Jones", "σ_OO")].split()
-        bond_k_oh = self._dataframe.loc[model_name, ("Parameters", "Bond vibration", "k")].split()
-        bond_eq_len_oh = self._dataframe.loc[model_name, ("Parameters", "Bond vibration", "r_OH")].split()
-        angle_k_hoh = self._dataframe.loc[model_name, ("Parameters", "Angle vibration", "k")].split()
-        angle_eq_hoh = self._dataframe.loc[model_name, ("Parameters", "Angle vibration", "θ_HOH")].split()
+        charge_o = self._dataframe.loc[
+            model_name, ("Parameters", "Coulomb", "q_O")
+        ].split()
+        charge_h = self._dataframe.loc[
+            model_name, ("Parameters", "Coulomb", "q_H")
+        ].split()
+        lj_epsilon_oo = self._dataframe.loc[
+            model_name, ("Parameters", "Lennard-Jones", "ε_OO")
+        ].split()
+        lj_sigma_oo = self._dataframe.loc[
+            model_name, ("Parameters", "Lennard-Jones", "σ_OO")
+        ].split()
+        bond_k_oh = self._dataframe.loc[
+            model_name, ("Parameters", "Bond vibration", "k")
+        ].split()
+        bond_eq_len_oh = self._dataframe.loc[
+            model_name, ("Parameters", "Bond vibration", "r_OH")
+        ].split()
+        angle_k_hoh = self._dataframe.loc[
+            model_name, ("Parameters", "Angle vibration", "k")
+        ].split()
+        angle_eq_hoh = self._dataframe.loc[
+            model_name, ("Parameters", "Angle vibration", "θ_HOH")
+        ].split()
 
         self._charge_o = Quantity(float(charge_o[0]), charge_o[1])
         self._charge_o_converted = None
@@ -99,10 +139,10 @@ class ModelParameters:
         self._unit_length = Unit(unit_length)
         self._unit_time = Unit(unit_time)
         self._unit_charge = Unit(unit_charge)
-        
+
         self._unit_force = self._unit_mass * self._unit_length / self._unit_time ** 2
         self._unit_energy = self._unit_force * self._unit_length
-        
+
         self.unify_units_mass()
         self.unify_units_coulomb()
         self.unify_units_lennard_jones()
@@ -124,26 +164,30 @@ class ModelParameters:
 
     def unify_units_lennard_jones(self):
         self._lj_sigma_oo_converted = self._lj_sigma_oo.convert_unit(self._unit_length)
-        self._lj_epsilon_oo_converted = self._lj_epsilon_oo.convert_unit(self._unit_energy)
-        
+        self._lj_epsilon_oo_converted = self._lj_epsilon_oo.convert_unit(
+            self._unit_energy
+        )
+
         sigma_6 = self._lj_sigma_oo_converted ** 6
         self._lj_b = 4 * self._lj_epsilon_oo_converted * sigma_6
         self._lj_a = self._lj_b * sigma_6
         return
-    
+
     def unify_units_bond_vibration(self):
         unit_k = self._unit_energy / self._unit_length ** 2
         self._bond_k_oh_converted = self._bond_k_oh.convert_unit(unit_k)
-        self._bond_eq_len_oh_converted = self._bond_eq_len_oh.convert_unit(self._unit_length)
+        self._bond_eq_len_oh_converted = self._bond_eq_len_oh.convert_unit(
+            self._unit_length
+        )
         return
-    
+
     def unify_units_angle_vibration(self):
         unit_angle = Unit("rad")
         unit_k = self._unit_energy / unit_angle ** 2
         self._angle_k_hoh_converted = self._angle_k_hoh.convert_unit(unit_k)
         self._angle_eq_hoh_converted = self._angle_eq_hoh.convert_unit(unit_angle)
         return
-    
+
     @property
     def dataframe(self):
         return self._dataframe.loc[["Description", self._name]]

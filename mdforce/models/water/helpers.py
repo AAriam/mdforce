@@ -13,10 +13,10 @@ from ...helpers import raise_for_input_criteria
 
 
 def check_input_data(
-        q: np.ndarray,
-        mol_ids: np.ndarray,
-        atomic_nums: np.ndarray,
-        bonded_atoms_idxs: Sequence[np.ndarray],
+    q: np.ndarray,
+    mol_ids: np.ndarray,
+    atomic_nums: np.ndarray,
+    bonded_atoms_idxs: Sequence[np.ndarray],
 ):
     """
     Check the input data for any discrepancies and raise an Error if any is found.
@@ -58,28 +58,40 @@ def check_input_data(
         raise ValueError("Only oxygen and hydrogen atoms are allowed.")
     # Verify that number of hydrogen atoms is two times the number of oxygen atoms
     elif count_atom_types[0] != count_atom_types[1] * 2:
-        raise ValueError("Number of hydrogen atoms should be two times the number of oxygen atoms.")
+        raise ValueError(
+            "Number of hydrogen atoms should be two times the number of oxygen atoms."
+        )
     else:
         for i, indices in enumerate(bonded_atoms_idxs):
             # Verify that each atom is connected to either one or two atoms
             if indices.size not in [1, 2]:
-                raise ValueError("Each element of array `bonded_atoms_idxs` should have either 1 or 2 elements.")
+                raise ValueError(
+                    "Each element of array `bonded_atoms_idxs` should have either 1 or 2 elements."
+                )
             elif indices.size == 1:
                 # Verify that atoms with one bond are hydrogen atoms
                 if atomic_nums[i] == 8:
-                    raise ValueError(f"Oxygen atom at index {i} is connected to only one atom.")
+                    raise ValueError(
+                        f"Oxygen atom at index {i} is connected to only one atom."
+                    )
                 # Verify that hydrogen atoms are connected to oxygen atoms
                 elif atomic_nums[indices[0]] != 8:
-                    raise ValueError(f"Hydrogen atom at index {i} is connected to another hydrogen atom.")
+                    raise ValueError(
+                        f"Hydrogen atom at index {i} is connected to another hydrogen atom."
+                    )
                 else:
                     pass
             elif indices.size == 2:
                 # Verify that atoms with two bonds are oxygen atoms
                 if atomic_nums[i] == 1:
-                    raise ValueError(f"Hydrogen atom at index {i} is connected to two atoms.")
+                    raise ValueError(
+                        f"Hydrogen atom at index {i} is connected to two atoms."
+                    )
                 # Verify that oxygen atoms are connected to two hydrogen atoms
                 elif atomic_nums[indices[0]] != 1 or atomic_nums[indices[1]] != 1:
-                    raise ValueError(f"Oxygen atom at index {i} is connected to another oxygen atom.")
+                    raise ValueError(
+                        f"Oxygen atom at index {i} is connected to another oxygen atom."
+                    )
                 else:
                     pass
             else:
@@ -87,10 +99,7 @@ def check_input_data(
     return
 
 
-def create_sorting_mask(
-        mol_ids: np.ndarray,
-        atomic_nums: np.ndarray
-) -> np.ndarray:
+def create_sorting_mask(mol_ids: np.ndarray, atomic_nums: np.ndarray) -> np.ndarray:
     """
     Create an array of atom indices, where the atoms are first sorted
     by their molecule-ID, and then by their atom type.
@@ -130,6 +139,6 @@ def create_sorting_mask(
     atom_types_sorted = atomic_nums[atom_idx_sorted_by_mol_id]
     # Calculate new indices when atoms are again sorted, now by their atom type
     for n in range(0, atom_types_sorted.shape[0] - 2, 3):
-        atom_types_sorted_idx = atom_types_sorted[n:n + 3].argsort(kind="stable") + n
-        atom_idx[n:n + 3][...] = np.flip(atom_idx[atom_types_sorted_idx])
+        atom_types_sorted_idx = atom_types_sorted[n : n + 3].argsort(kind="stable") + n
+        atom_idx[n : n + 3][...] = np.flip(atom_idx[atom_types_sorted_idx])
     return atom_idx

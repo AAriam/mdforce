@@ -1,4 +1,3 @@
-
 # Standard library
 from typing import Union, Tuple
 
@@ -49,14 +48,39 @@ class ForceField:
     """
 
     __slots__ = [
-        "_acceleration", "_force", "_distances", "_distance_vectors", "_angles",
-        "_energy_coulomb", "_energy_lj", "_energy_bond", "_energy_angle",
-        "_q", "_num_atoms", "_mass_o", "_mass_h", "_coulomb_k", "_charges", "_lj_a", "_lj_b",
-        "_bond_k", "_bond_eq_dist", "_angle_k", "_angle_eq"
+        "_acceleration",
+        "_force",
+        "_distances",
+        "_distance_vectors",
+        "_angles",
+        "_energy_coulomb",
+        "_energy_lj",
+        "_energy_bond",
+        "_energy_angle",
+        "_q",
+        "_num_atoms",
+        "_mass_o",
+        "_mass_h",
+        "_coulomb_k",
+        "_charges",
+        "_lj_a",
+        "_lj_b",
+        "_bond_k",
+        "_bond_eq_dist",
+        "_angle_k",
+        "_angle_eq",
     ]
 
     @classmethod
-    def from_model_name(cls, shape_data, model_name, unit_length, unit_time, unit_mass="Da", unit_charge="e"):
+    def from_model_name(
+        cls,
+        shape_data,
+        model_name,
+        unit_length,
+        unit_time,
+        unit_mass="Da",
+        unit_charge="e",
+    ):
         model = parameters.ModelParameters(model_name)
         model.unify_units(unit_length, unit_time, unit_mass, unit_charge)
         return cls.from_model(shape_data, model)
@@ -75,29 +99,31 @@ class ForceField:
             bond_force_constant=model._bond_k_oh_converted.value,
             bond_eq_dist=model._bond_eq_len_oh_converted.value,
             angle_force_constant=model._angle_k_hoh_converted.value,
-            angle_eq_angle=model._angle_eq_hoh_converted.value
+            angle_eq_angle=model._angle_eq_hoh_converted.value,
         )
 
     def __init__(
-            self,
-            shape_data: Tuple[int, int],
-            mass_oxygen: Union[float, int, np.number],
-            mass_hydrogen: Union[float, int, np.number],
-            coulomb_constant: Union[float, int, np.number],
-            charge_oxygen: Union[float, int, np.number],
-            charge_hydrogen: Union[float, int, np.number],
-            lennard_jones_param_a: Union[float, int, np.number],
-            lennard_jones_param_b: Union[float, int, np.number],
-            bond_force_constant: Union[float, int, np.number],
-            bond_eq_dist: Union[float, int, np.number],
-            angle_force_constant: Union[float, int, np.number],
-            angle_eq_angle: Union[float, int, np.number]
+        self,
+        shape_data: Tuple[int, int],
+        mass_oxygen: Union[float, int, np.number],
+        mass_hydrogen: Union[float, int, np.number],
+        coulomb_constant: Union[float, int, np.number],
+        charge_oxygen: Union[float, int, np.number],
+        charge_hydrogen: Union[float, int, np.number],
+        lennard_jones_param_a: Union[float, int, np.number],
+        lennard_jones_param_b: Union[float, int, np.number],
+        bond_force_constant: Union[float, int, np.number],
+        bond_eq_dist: Union[float, int, np.number],
+        angle_force_constant: Union[float, int, np.number],
+        angle_eq_angle: Union[float, int, np.number],
     ):
         # Store parameters
         self._mass_o = mass_oxygen
         self._mass_h = mass_hydrogen
         self._coulomb_k = coulomb_constant
-        self._charges = np.tile([charge_oxygen, charge_hydrogen, charge_hydrogen], shape_data[0]//3)
+        self._charges = np.tile(
+            [charge_oxygen, charge_hydrogen, charge_hydrogen], shape_data[0] // 3
+        )
         self._lj_a = lennard_jones_param_a
         self._lj_b = lennard_jones_param_b
         self._bond_k = bond_force_constant
@@ -112,7 +138,9 @@ class ForceField:
         self._distances = np.zeros((shape_data[0], shape_data[0]))
         self._distance_vectors = np.zeros((shape_data[0], shape_data[0], shape_data[1]))
         self._angles = np.zeros(shape_data[0] // 3)
-        self._energy_coulomb = self._energy_lj = self._energy_bond = self._energy_angle = 0
+        self._energy_coulomb = (
+            self._energy_lj
+        ) = self._energy_bond = self._energy_angle = 0
 
     @property
     def acceleration(self) -> np.ndarray:
@@ -124,7 +152,12 @@ class ForceField:
 
     @property
     def energy_total(self) -> float:
-        return self._energy_coulomb + self._energy_lj + self._energy_bond + self._energy_angle
+        return (
+            self._energy_coulomb
+            + self._energy_lj
+            + self._energy_bond
+            + self._energy_angle
+        )
 
     @property
     def energy_coulomb(self) -> float:
@@ -164,7 +197,9 @@ class ForceField:
     def new_state(self, q: np.ndarray) -> None:
         self._q[...] = q
         self._force[...] = 0
-        self._energy_coulomb = self._energy_lj = self._energy_bond = self._energy_angle = 0
+        self._energy_coulomb = (
+            self._energy_lj
+        ) = self._energy_bond = self._energy_angle = 0
         return
 
     def update_acceleration(self):
@@ -186,9 +221,16 @@ class ForceField:
 
             idx_first_interacting_atom = idx_curr_atom + 3 - idx_curr_atom % 3
             dists = self._distances[idx_curr_atom, idx_first_interacting_atom:]
-            dist_vectors = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom:]
+            dist_vectors = self._distance_vectors[
+                idx_curr_atom, idx_first_interacting_atom:
+            ]
 
-            energy = self._coulomb_k * self._charges[idx_curr_atom] * self._charges[idx_first_interacting_atom:] / dists
+            energy = (
+                self._coulomb_k
+                * self._charges[idx_curr_atom]
+                * self._charges[idx_first_interacting_atom:]
+                / dists
+            )
             self._energy_coulomb += energy.sum()
 
             f = (energy / dists ** 2).reshape(-1, 1) * dist_vectors
@@ -201,7 +243,9 @@ class ForceField:
         for idx_curr_atom in range(0, self._num_atoms - 3, 3):
             idx_first_interacting_atom = idx_curr_atom + 3
             dists = self._distances[idx_curr_atom, idx_first_interacting_atom::3]
-            dist_vectors = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom::3]
+            dist_vectors = self._distance_vectors[
+                idx_curr_atom, idx_first_interacting_atom::3
+            ]
 
             inverse_dist_2 = 1 / dists ** 2
             inverse_dist_6 = inverse_dist_2 ** 3
@@ -214,7 +258,9 @@ class ForceField:
             # Calculate force
             f_attractive = 6 * e_attractive
             f_repulsive = 12 * e_repulsive
-            f = ((f_attractive + f_repulsive) * inverse_dist_2).reshape(-1, 1) * dist_vectors
+            f = ((f_attractive + f_repulsive) * inverse_dist_2).reshape(
+                -1, 1
+            ) * dist_vectors
             self._force[idx_curr_atom] += f.sum(axis=0)
             self._force[idx_first_interacting_atom::3] += -f
         return
@@ -222,8 +268,12 @@ class ForceField:
     def update_bond_vibration(self) -> None:
 
         for idx_curr_atom in range(0, self._num_atoms, 3):
-            dists = self._distances[idx_curr_atom, idx_curr_atom + 1:idx_curr_atom + 3]
-            dist_vectors = self._distance_vectors[idx_curr_atom, idx_curr_atom + 1:idx_curr_atom + 3]
+            dists = self._distances[
+                idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3
+            ]
+            dist_vectors = self._distance_vectors[
+                idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3
+            ]
             displacements = dists - self._bond_eq_dist
             k_times_displacements = self._bond_k * displacements
 
@@ -231,7 +281,7 @@ class ForceField:
 
             f = (-k_times_displacements / dists).reshape(-1, 1) * dist_vectors
             self._force[idx_curr_atom] += f.sum(axis=0)
-            self._force[idx_curr_atom + 1:idx_curr_atom + 3] += -f
+            self._force[idx_curr_atom + 1 : idx_curr_atom + 3] += -f
         return
 
     def update_angle_vibration(self) -> None:
@@ -243,7 +293,7 @@ class ForceField:
             dist_mr = self._distances[idx_curr_atom, idx_curr_atom + 2]
             cos = np.dot(r_ml, r_mr) / (dist_ml * dist_mr)
             angle = np.arccos(cos)
-            self._angles[idx_curr_atom//3] = angle
+            self._angles[idx_curr_atom // 3] = angle
 
             # Calculate common terms
             sin = np.sin(angle)
@@ -289,6 +339,6 @@ class ForceField:
         """
 
         for idx, coord in enumerate(self._q[:-1]):
-            self._distance_vectors[idx, idx + 1:] = coord - self._q[idx + 1:]
+            self._distance_vectors[idx, idx + 1 :] = coord - self._q[idx + 1 :]
         self._distances[...] = np.linalg.norm(self._distance_vectors, axis=2)
         return
