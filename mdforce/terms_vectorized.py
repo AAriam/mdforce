@@ -97,7 +97,7 @@ def coulomb(
 
     # Calculate common terms
     r_jsi = q_i - q_js
-    dist = lin.norm(r_jsi)
+    dist = lin.norm(r_jsi, axis=1)
 
     # Calculate potential
     e = k * c_i * c_js / dist
@@ -142,7 +142,7 @@ def bond_vibration_harmonic(
 
     # Calculate common terms
     r_jsi = q_i - q_js
-    dist = lin.norm(r_jsi)
+    dist = lin.norm(r_jsi, axis=1)
     displacement = dist - eq_dist_ijs
     k_times_displ = k_ijs * displacement
 
