@@ -1,3 +1,12 @@
+""""
+This module was first written for the water flexible 3-site SPC model to find the indices of all interacting
+atoms for each force. However, it was found out that using advanced indexing for numpy arrays is slower than
+slicing, and since the data for a water-only simulation can be made highly organized, slicing can be used instead.
+Nevertheless, these functions can be repurposed later for use in a general force field for simulation of an ensemble
+of mixed molecules.
+"""
+
+
 import numpy as np
 
 
