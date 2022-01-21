@@ -71,9 +71,7 @@ def check_input_data(
             elif indices.size == 1:
                 # Verify that atoms with one bond are hydrogen atoms
                 if atomic_nums[i] == 8:
-                    raise ValueError(
-                        f"Oxygen atom at index {i} is connected to only one atom."
-                    )
+                    raise ValueError(f"Oxygen atom at index {i} is connected to only one atom.")
                 # Verify that hydrogen atoms are connected to oxygen atoms
                 elif atomic_nums[indices[0]] != 8:
                     raise ValueError(
@@ -84,9 +82,7 @@ def check_input_data(
             elif indices.size == 2:
                 # Verify that atoms with two bonds are oxygen atoms
                 if atomic_nums[i] == 1:
-                    raise ValueError(
-                        f"Hydrogen atom at index {i} is connected to two atoms."
-                    )
+                    raise ValueError(f"Hydrogen atom at index {i} is connected to two atoms.")
                 # Verify that oxygen atoms are connected to two hydrogen atoms
                 elif atomic_nums[indices[0]] != 1 or atomic_nums[indices[1]] != 1:
                     raise ValueError(

@@ -187,9 +187,7 @@ def lennard_jones(atom_ids):
         # Assign the index of current oxygen to `pairs_idx`
         pairs_idx[first_empty_idx : first_empty_idx + partners_idx.size, 0] = oxygen_idx
         # Assign all indices of interacting partners to `pairs_idx`
-        pairs_idx[first_empty_idx : first_empty_idx + partners_idx.size, 1][
-            ...
-        ] = partners_idx
+        pairs_idx[first_empty_idx : first_empty_idx + partners_idx.size, 1][...] = partners_idx
         # Update the index of first empty entry in `pairs_idx`
         first_empty_idx += partners_idx.size
     return pairs_idx
@@ -233,9 +231,7 @@ def bond_vibration(bonded_atoms_idx):
         # Filter the index of bonded partners to contain only those with higher index
         partners_idx_unique = bonded_atoms_idx_list[mask_unique_pairs]
         # Assign the index of current atom to `pairs_idx`
-        pairs_idx[
-            first_empty_idx : first_empty_idx + partners_idx_unique.size, 0
-        ] = atom_idx
+        pairs_idx[first_empty_idx : first_empty_idx + partners_idx_unique.size, 0] = atom_idx
         # Assign all indices of bonded partners to `pairs_idx`
         pairs_idx[first_empty_idx : first_empty_idx + partners_idx_unique.size, 1][
             ...

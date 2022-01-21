@@ -5,6 +5,7 @@ which takes in three particles and calculates the force on each of them.
 Moreover, each function also returns the potential energy of the system of two particles.
 """
 
+# 3rd-party
 import numpy as np
 import numpy.linalg as lin
 
@@ -195,9 +196,7 @@ def angle_vibration_harmonic(
     elif np.isclose(cos, -1):
         cos = -1
     else:
-        raise ValueError(
-            f"Calculated cosine {cos} does not lie within the range of [-1, 1]."
-        )
+        raise ValueError(f"Calculated cosine {cos} does not lie within the range of [-1, 1].")
     angle = np.arccos(cos)
 
     # Calculate common terms
