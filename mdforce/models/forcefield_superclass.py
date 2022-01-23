@@ -3,10 +3,13 @@ This module contains the superclass `ForceField`, from which all force-field cla
 """
 
 # Standard library
+from __future__ import annotations
 from typing import Tuple, Union
+import webbrowser
 
 # 3rd-party packages
 import numpy as np
+import pandas as pd
 import duq
 
 # Self
@@ -27,9 +30,46 @@ class ForceField:
     _dim_charge = duq.Dimension("electric charge")
     _dim_coulomb_k = duq.Dimension("energy.length.electric charge^-2")
     _dim_mass = duq.Dimension("mass")
+
     # Internal units of class data
     _unit_mass = duq.Unit("Da")
     _unit_charge = duq.Unit("e")
+
+    # Pandas Dataframe containing several sets of parameters for the model.
+    _dataframe = None
+
+    @classmethod
+    def print_available_models(cls) -> None:
+        """
+        Print all the data on all available model parameters.
+
+        Returns
+        -------
+            None
+        """
+        for name in cls._dataframe.index[1:]:
+            model = cls.from_model(name)
+            print(model.model_metadata + "\n\n" + str(model) + "\n")
+        return
+
+    @classmethod
+    def from_model(cls, model_name: str) -> ForceField:
+        """
+        Alternative constructor (factory) method for instantiating the class using an available
+        set of model parameters.
+
+        Parameters
+        ----------
+        model_name : str
+            Name of the parameters model. Available models and their names can be viewed by calling
+            the class method `print_available_models`, which prints all data.
+
+        Returns
+        -------
+            ForceField
+            Instantiated object parametrized using the given parameters model.
+        """
+        pass
 
     def __init__(self):
 
@@ -51,6 +91,13 @@ class ForceField:
         # Attributes that are set after calling `initialize_forcefield`
         self._num_molecules = None
         self._num_atoms = None
+
+        # Attributes that are only set when instantiating from alternative constructor `from_model`
+        self._model_name = None
+        self._model_description = None
+        self._model_ref_name = None
+        self._model_ref_cite = None
+        self._model_ref_link = None
         return
 
     @property
@@ -205,3 +252,182 @@ class ForceField:
             helpers.raise_for_dimension(lj_b, self._dim_lj_b, "lj_b")
 
         return lj_a, lj_b
+
+    @property
+    def model_dataframe(self) -> pd.DataFrame:
+        """
+        All data on the parameters-model used in the force-field, as a Pandas.DataFrame object.
+
+        Returns
+        -------
+            pd.DataFrame
+
+        Raises
+        ------
+        ValueError
+            When the `ForceField` object is not instantiated using the
+            alternative constructor method `from_model` (and thus has no model data).
+        """
+
+        self._raise_for_model()
+        return self._dataframe.loc[["Description", self._model_name]]
+
+    @property
+    def model_metadata(self) -> str:
+        """
+        Metadata of the parameters-model used in the force-field, including its name, description,
+        and citation reference.
+
+        Returns
+        -------
+            str
+
+        Raises
+        ------
+        ValueError
+            When the `ForceField` object is not instantiated using the
+            alternative constructor method `from_model` (and thus has no model data).
+        """
+
+        self._raise_for_model()
+        str_repr = (
+            f"Name: {self.model_name}\n"
+            f"Description: {self.model_description}\n"
+            f"Reference: {self.model_publication_name}, "
+            f"{self.model_publication_citation} {self.model_publication_link}"
+        )
+        return str_repr
+
+    @property
+    def model_name(self) -> str:
+        """
+        Name of the parameters-model used in the force-field.
+
+        Returns
+        -------
+            str
+
+        Raises
+        ------
+        ValueError
+            When the `ForceField` object is not instantiated using the
+            alternative constructor method `from_model` (and thus has no model data).
+        """
+
+        self._raise_for_model()
+        return self._model_name
+
+    @property
+    def model_description(self) -> str:
+        """
+        Description of the parameters-model used in the force-field.
+
+        Returns
+        -------
+            str
+
+        Raises
+        ------
+        ValueError
+            When the `ForceField` object is not instantiated using the
+            alternative constructor method `from_model` (and thus has no model data).
+        """
+
+        self._raise_for_model()
+        return self._model_description
+
+    @property
+    def model_publication_name(self) -> str:
+        """
+        Name of the publication for the parameters-model used in the force-field.
+
+        Returns
+        -------
+            str
+
+        Raises
+        ------
+        ValueError
+            When the `ForceField` object is not instantiated using the
+            alternative constructor method `from_model` (and thus has no model data).
+        """
+
+        self._raise_for_model()
+        return self._model_ref_name
+
+    @property
+    def model_publication_citation(self) -> str:
+        """
+        Citation reference of publication for the parameters-model used in the force-field.
+
+        Returns
+        -------
+            str
+
+        Raises
+        ------
+        ValueError
+            When the `ForceField` object is not instantiated using the
+            alternative constructor method `from_model` (and thus has no model data).
+        """
+
+        self._raise_for_model()
+        return self._model_ref_cite
+
+    @property
+    def model_publication_link(self) -> str:
+        """
+        Hyperlink of the publication for the parameters-model used in the force-field.
+
+        Returns
+        -------
+            str
+
+        Raises
+        ------
+        ValueError
+            When the `ForceField` object is not instantiated using the
+            alternative constructor method `from_model` (and thus has no model data).
+        """
+
+        self._raise_for_model()
+        return self._model_ref_link
+
+    def model_publication_webpage(self) -> None:
+        """
+        Open the webpage of the publication for the parameters-model in the default browser.
+
+        Returns
+        -------
+            bool
+
+        Raises
+        ------
+        ValueError
+            When the `ForceField` object is not instantiated using the
+            alternative constructor method `from_model` (and thus has no model data).
+        """
+
+        self._raise_for_model()
+        webbrowser.open_new(self._model_ref_link)
+        return
+
+    def _raise_for_model(self) -> None:
+        """
+        Method used by all properties/methods corresponding to model-data, to raise an error when
+        the model-data is not available (because the object was not instantiated using the
+        alternative constructor method `from_model`).
+
+        Returns
+        -------
+            None
+
+        Raises
+        ------
+        ValueError
+        """
+
+        if self._model_name is None:
+            raise ValueError("The force-field was not created from a parameter model.")
+        return
+
