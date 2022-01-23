@@ -182,14 +182,14 @@ class Flexible3SiteSPC(ForceField):
         # Read parameters (as strings) from the corresponding row in the dataframe,
         # and split in order to separate the value and unit.
         p = "Parameters"
-        charge_o = cls._dataframe.loc[model_name, (p, "Coulomb", "q_O")].split()
-        charge_h = cls._dataframe.loc[model_name, (p, "Coulomb", "q_H")].split()
-        lj_epsilon_oo = cls._dataframe.loc[model_name, (p, "Lennard-Jones", "ε_OO")].split()
-        lj_sigma_oo = cls._dataframe.loc[model_name, (p, "Lennard-Jones", "σ_OO")].split()
-        bond_k = cls._dataframe.loc[model_name, (p, "Bond vibration", "k")].split()
-        bond_eq_len = cls._dataframe.loc[model_name, (p, "Bond vibration", "r_OH")].split()
-        angle_k = cls._dataframe.loc[model_name, (p, "Angle vibration", "k")].split()
-        angle_eq = cls._dataframe.loc[model_name, (p, "Angle vibration", "θ_HOH")].split()
+        charge_o = cls._dataframe.loc[model_name, (p, "Coulomb", "q_O")]
+        charge_h = cls._dataframe.loc[model_name, (p, "Coulomb", "q_H")]
+        lj_epsilon_oo = cls._dataframe.loc[model_name, (p, "Lennard-Jones", "ε_OO")]
+        lj_sigma_oo = cls._dataframe.loc[model_name, (p, "Lennard-Jones", "σ_OO")]
+        bond_k = cls._dataframe.loc[model_name, (p, "Bond vibration", "k")]
+        bond_eq_len = cls._dataframe.loc[model_name, (p, "Bond vibration", "r_OH")]
+        angle_k = cls._dataframe.loc[model_name, (p, "Angle vibration", "k")]
+        angle_eq = cls._dataframe.loc[model_name, (p, "Angle vibration", "θ_HOH")]
 
         # Load constants
         mass_o = duq.Quantity(atom_data.mass_dalton[8], "Da")
@@ -199,15 +199,15 @@ class Flexible3SiteSPC(ForceField):
         # Create `duq.Quantity` objects from the parameters and
         # instantiate the class using the main constructor.
         forcefield = cls(
-            charge_oxygen=duq.Quantity(float(charge_o[0]), charge_o[1]),
-            charge_hydrogen=duq.Quantity(float(charge_h[0]), charge_h[1]),
+            charge_oxygen=charge_o,
+            charge_hydrogen=charge_h,
             coulomb_const=coulomb_k,
-            lennard_jones_epsilon_oo=duq.Quantity(float(lj_epsilon_oo[0]), lj_epsilon_oo[1]),
-            lennard_jones_sigma_oo=duq.Quantity(float(lj_sigma_oo[0]), lj_sigma_oo[1]),
-            bond_force_constant=duq.Quantity(float(bond_k[0]), bond_k[1]),
-            bond_eq_dist=duq.Quantity(float(bond_eq_len[0]), bond_eq_len[1]),
-            angle_force_constant=duq.Quantity(float(angle_k[0]), angle_k[1]),
-            angle_eq_angle=duq.Quantity(float(angle_eq[0]), angle_eq[1]),
+            lennard_jones_epsilon_oo=lj_epsilon_oo,
+            lennard_jones_sigma_oo=lj_sigma_oo,
+            bond_force_constant=bond_k,
+            bond_eq_dist=bond_eq_len,
+            angle_force_constant=angle_k,
+            angle_eq_angle=angle_eq,
             mass_oxygen=mass_o,
             mass_hydrogen=mass_h,
 
