@@ -79,10 +79,8 @@ class Flexible3SiteSPC(ForceField):
         "_model_ref_name",
         "_model_ref_cite",
         "_model_ref_link",
-        "_unit_mass",
         "_unit_length",
         "_unit_time",
-        "_unit_charge",
         "_unit_force",
         "_unit_energy",
         "_fitted",
@@ -321,8 +319,6 @@ class Flexible3SiteSPC(ForceField):
         self._angle_eq_converted = None
         self._angle_k_converted = None
         self._bond_eq_len_converted = None
-        self._unit_charge = None
-        self._unit_mass = None
         self._unit_length = None
         self._unit_time = None
         self._unit_force = None
@@ -360,12 +356,15 @@ class Flexible3SiteSPC(ForceField):
             self._unit_time = helpers.convert_to_unit(unit_time, "time", "unit_time")
 
         self._unit_force = self._unit_mass * self._unit_length / self._unit_time ** 2
+        helpers.raise_for_dimension(self._unit_force, "force", "_unit_force")
         self._unit_energy = self._unit_force * self._unit_length
+        helpers.raise_for_dimension(self._unit_energy, "energy", "_unit_energy")
 
         # Coulomb
         self._charge_o_converted = self._charge_o.convert_unit(self._unit_charge)
         self._charge_h_converted = self._charge_h.convert_unit(self._unit_charge)
         unit_k = self._unit_energy * self._unit_length / self._unit_charge ** 2
+        helpers.raise_for_dimension(unit_k, self._dim_coulomb_k, "unit_k")
         self._coulomb_k_converted = self._coulomb_k.convert_unit(unit_k)
         self.__c_o = self._charge_o_converted.value
         self.__c_h = self._charge_h_converted.value
@@ -374,8 +373,10 @@ class Flexible3SiteSPC(ForceField):
         # Lennard-Jones
         self._lj_sigma_oo_converted = self._lj_sigma_oo.convert_unit(self._unit_length)
         self._lj_epsilon_oo_converted = self._lj_epsilon_oo.convert_unit(self._unit_energy)
-        self._lj_a_converted = self._lj_a.convert_unit()
-        self._lj_b = self._lj_b.convert_unit()
+        self._lj_a_converted = self._lj_a.convert_unit(self._unit_energy * self._unit_length ** 12)
+        helpers.raise_for_dimension(self._lj_a_converted, self._dim_lj_a, "_lj_a_converted")
+        self._lj_b_converted = self._lj_b.convert_unit(self._unit_energy * self._unit_length ** 6)
+        helpers.raise_for_dimension(self._lj_b_converted, self._dim_lj_b, "_lj_b_converted")
         self.__lj_a = self._lj_a_converted.value
         self.__lj_b = self._lj_b_converted.value
 
@@ -640,7 +641,9 @@ class Flexible3SiteSPC(ForceField):
         # Iterate over all atoms (other than the last atom)
         for idx_atom, coord_atom in enumerate(positions[:-1]):
             # Calculate distance vectors between that atom and all other atoms after it
-            self._distance_vectors[idx_atom, idx_atom + 1 :] = coord_atom - positions[idx_atom + 1 :]
+            self._distance_vectors[idx_atom, idx_atom + 1 :] = (
+                    coord_atom - positions[idx_atom + 1 :]
+            )
         # Calculate all distances at once, from the distance vectors
         self._distances[...] = np.linalg.norm(self._distance_vectors, axis=2)
         return
