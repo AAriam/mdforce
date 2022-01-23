@@ -3,10 +3,11 @@ Helper functions used by all models.
 """
 
 # Standard library
-from typing import Sequence
+from typing import Sequence, Union
 
 # 3rd-party packages
 import numpy as np
+import duq
 
 
 def raise_for_input_criteria(
@@ -89,4 +90,120 @@ def raise_for_input_criteria(
     elif len(bonded_atoms_idxs) != num_atoms:
         raise ValueError("Lengths of `bonded_atoms_idxs` and `q` do not match.")
 
+    return
+
+
+def convert_to_unit(
+    unit: Union[duq.Unit, str], correct_dimension: str, param_name: str
+) -> duq.Unit:
+    """
+    Verify that a given `unit` is either a string or a `duq.Unit` object, and raise an error
+    otherwise. If it's a string, transform it to a `duq.Unit` object. Verify that the `duq.Unit`
+    object has the expected dimension, and raise an error otherwise.
+
+    Parameters
+    ----------
+    unit : Union[duq.Unit, str]
+        Unit of interest, either as a string representation (see duq.Unit for more details) or
+        a `duq.Unit` object.
+    correct_dimension : str
+        String representation of the expected dimension of the unit (see duq.Dimension for more
+        details).
+    param_name : str
+        Name of the parameter to which `unit` is bound; to be mentioned in the error message.
+
+    Returns
+    -------
+        duq.Unit
+        Object representing the unit of interest.
+
+    Raises
+    ------
+    ValueError
+    """
+    if isinstance(unit, str):
+        unit_obj = duq.Unit(unit)
+    elif isinstance(unit, duq.Unit):
+        unit_obj = unit
+    else:
+        raise ValueError(f"Type of parameter `{param_name}` should be either duq.Unit or string.")
+    raise_for_dimension(unit_obj, correct_dimension, param_name)
+    return unit_obj
+
+
+def convert_to_quantity(
+    quantity: Union[duq.Quantity, str], correct_dimension: str, param_name: str
+) -> duq.Quantity:
+    """
+    Verify that a given `quantity` is either a string or a `duq.Quantity` object, and raise an
+    error otherwise. If it's a string, transform it to a `duq.Quantity` object. Verify that the
+    `duq.Quantity` object has the expected dimension, and raise an error otherwise.
+
+    Parameters
+    ----------
+    quantity : Union[duq.Quantity, str]
+        Quantity of interest, either as a string representation (see duq.Quantity for more details)
+        or a `duq.Quantity` object.
+    correct_dimension : str
+        String representation of the expected dimension of the quantity (see duq.Dimension for more
+        details).
+    param_name : str
+        Name of the parameter to which `quantity` is bound; to be mentioned in the error message.
+
+    Returns
+    -------
+        duq.Quantity
+        Object representing the quantity of interest.
+
+    Raises
+    ------
+    ValueError
+    """
+    if isinstance(quantity, str):
+        quantity_value, quantity_unit = quantity.split()
+        quantity_obj = duq.Quantity(float(quantity_value), quantity_unit)
+    elif isinstance(quantity, duq.Quantity):
+        quantity_obj = quantity
+    else:
+        raise ValueError(
+            f"Type of parameter `{param_name}` should be either duq.Quantity or string."
+        )
+    raise_for_dimension(quantity_obj, correct_dimension, param_name)
+    return quantity_obj
+
+
+def raise_for_dimension(
+    unit_or_quantity: Union[duq.Unit, duq.Quantity],
+    correct_dimension: str,
+    param_name: str,
+) -> None:
+    """
+    Verify that a `duq.Quantity` or `duq.Unit` object has the correct dimension,
+    and raise an error otherwise.
+
+    Parameters
+    ----------
+    unit_or_quantity : Union[duq.Unit, duq.Quantity]
+        Object whose dimension is to be verified.
+    correct_dimension : str
+        String representation of the expected dimension of the object (see duq.Dimension for more
+        details).
+    param_name : str
+        Name of the parameter to which the `duq.Unit` or `duq.Quantity` object is bound; to be
+        mentioned in the error message.
+
+    Returns
+    -------
+        None
+
+    Raises
+    ------
+    ValueError
+    """
+    correct_dim_obj = duq.Dimension(correct_dimension)
+    if unit_or_quantity.dimension != correct_dim_obj:
+        raise ValueError(
+            f"Parameter `{param_name}` should have the physical dimension of "
+            f"{correct_dim_obj.name_as_is}."
+        )
     return
