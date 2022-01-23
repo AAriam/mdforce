@@ -174,7 +174,7 @@ def convert_to_quantity(
 
 def raise_for_dimension(
     unit_or_quantity: Union[duq.Unit, duq.Quantity],
-    correct_dimension: str,
+    correct_dimension: Union[str, duq.Dimension],
     param_name: str,
 ) -> None:
     """
@@ -185,9 +185,9 @@ def raise_for_dimension(
     ----------
     unit_or_quantity : Union[duq.Unit, duq.Quantity]
         Object whose dimension is to be verified.
-    correct_dimension : str
-        String representation of the expected dimension of the object (see duq.Dimension for more
-        details).
+    correct_dimension : Union[str, duq.Dimension]
+        String representation or duq.Dimension object of the expected dimension
+        (see duq.Dimension for more details).
     param_name : str
         Name of the parameter to which the `duq.Unit` or `duq.Quantity` object is bound; to be
         mentioned in the error message.
@@ -200,10 +200,11 @@ def raise_for_dimension(
     ------
     ValueError
     """
-    correct_dim_obj = duq.Dimension(correct_dimension)
-    if unit_or_quantity.dimension != correct_dim_obj:
+    if isinstance(correct_dimension, str):
+        correct_dimension = duq.Dimension(correct_dimension)
+    if not unit_or_quantity.dimension.is_convertible_to(correct_dimension):
         raise ValueError(
             f"Parameter `{param_name}` should have the physical dimension of "
-            f"{correct_dim_obj.name_as_is}."
+            f"{correct_dimension.symbol_as_is}, but has {unit_or_quantity.dimension.symbol_as_is}."
         )
     return
