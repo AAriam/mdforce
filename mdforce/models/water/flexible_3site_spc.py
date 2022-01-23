@@ -7,7 +7,6 @@ from __future__ import annotations
 from typing import Union, Tuple
 from pathlib import Path
 
-
 # 3rd-party packages
 import numpy as np
 import pandas as pd
@@ -32,37 +31,6 @@ class Flexible3SiteSPC(ForceField):
     where the coordinates of the oxygen atom comes first. For example, assuming A_n_m denotes
     the array of coordinates of the mth A atom in nth molecule; then the input data must be
     in the form: [O_1_1, H_1_1, H_1_2, O_2_1, H_2_1, H_2_2, ...]
-
-    Parameters
-    ----------
-    charge_oxygen : Union[str, duq.Quantity]
-        Electric charge of the oxygen atom, as a `duq.Quantity` object,
-        or a string representing the value and unit, e.g. "-0.8 e".
-    charge_hydrogen : Union[str, duq.Quantity]
-        Electric charge of the hydrogen atom, as a `duq.Quantity` object,
-        or a string representing the value and unit, e.g. "0.4 e".
-    lennard_jones_epsilon_oo : Union[str, duq.Quantity]
-        Lennard-Jones dispersion energy (ɛ_OO), i.e. the depth of the oxygen–oxygen potential well,
-        as a `duq.Quantity` object, or a string representing the value and unit,
-        e.g. "1.55E-01 kcal.mol^-1".
-    lennard_jones_sigma_oo : Union[str, duq.Quantity]
-        Lennard-Jones size of the particle (σ_OO), i.e. the oxygen–oxygen distance at which the
-        potential is zero, as a `duq.Quantity` object, or a string representing the value and unit,
-        e.g. "3.165 Å".
-    bond_force_constant : Union[str, duq.Quantity]
-        Force constant (k_b) of the harmonic O–H bond vibration potential, as a `duq.Quantity`
-        object, or a string representing the value and unit, e.g. "1.059E+03 kcal.Å^-2.mol^-1".
-    bond_eq_dist : Union[str, duq.Quantity]
-        Equilibrium bond length of the O–H bond, as a `duq.Quantity` object,
-        or a string representing the value and unit, e.g. "1.012 Å".
-    angle_force_constant : Union[str, duq.Quantity]
-        Force constant of the harmonic H–O–H angle vibration potential, as a `duq.Quantity` object,
-        or a string representing the value and unit, e.g. "75.9 kcal.rad^-2.mol^-1".
-        If the unit of angle is not provided, it is assumed to be in radian.
-    angle_eq_angle : Union[str, duq.Quantity]
-        Equilibrium H–O–H angle, as a `duq.Quantity` object, or a string representing the
-        value and unit, e.g. "113.24 deg".
-        If the unit of angle is not provided, it is assumed to be in radian.
     """
 
     __slots__ = [
@@ -223,6 +191,46 @@ class Flexible3SiteSPC(ForceField):
         mass_oxygen: Union[float, str, duq.Quantity] = None,
         mass_hydrogen: Union[float, str, duq.Quantity] = None,
     ):
+        """
+        Instantiate the class by directly inputting all force-field parameters and constants.
+        To instantiate the class using an available parameter-model, use the alternative
+        constructor `Flexible3SiteSPC.from_model`.
+
+        Parameters
+        ----------
+        bond_force_constant : Union[float, str, duq.Quantity]
+            Force constant (k_b) of the harmonic O–H bond vibration potential, as a `duq.Quantity`
+            object, or a string representing the value and unit, e.g. "1.059E+03 kcal.Å^-2.mol^-1".
+        bond_eq_dist : Union[float, str, duq.Quantity]
+            Equilibrium bond length of the O–H bond, as a `duq.Quantity` object, or a string
+            representing the value and unit, e.g. "1.012 Å".
+        angle_force_constant : Union[float, str, duq.Quantity]
+            Force constant of the harmonic H–O–H angle vibration potential, as a `duq.Quantity`
+            object, or a string representing the value and unit, e.g. "75.9 kcal.rad^-2.mol^-1".
+            If the unit of angle is not provided, it is assumed to be in radian.
+        angle_eq_angle : Union[float, str, duq.Quantity]
+            Equilibrium H–O–H angle, as a `duq.Quantity` object, or a string representing the
+            value and unit, e.g. "113.24 deg". If the unit of angle is not provided, it is assumed
+            to be in radian.
+        lennard_jones_epsilon_oo : Union[float, str, duq.Quantity]
+            Lennard-Jones dispersion energy (ɛ_OO), i.e. the depth of the oxygen–oxygen potential
+            well, as a `duq.Quantity` object, or a string representing the value and unit, e.g.
+            "1.55E-01 kcal.mol^-1".
+        lennard_jones_sigma_oo : Union[float, str, duq.Quantity]
+            Lennard-Jones size of the particle (σ_OO), i.e. the oxygen–oxygen distance at which the
+            potential is zero, as a `duq.Quantity` object, or a string representing the value and
+            unit, e.g. "3.165 Å".
+        charge_oxygen : Union[float, str, duq.Quantity]
+            Electric charge of the oxygen atom, as a `duq.Quantity` object, or a string
+            representing the value and unit, e.g. "-0.8 e".
+        charge_hydrogen : Union[float, str, duq.Quantity]
+            Electric charge of the hydrogen atom, as a `duq.Quantity` object, or a string
+            representing the value and unit, e.g. "0.4 e".
+        coulomb_const : Union[float, str, duq.Quantity]
+        mass_oxygen : Union[float, str, duq.Quantity]
+        mass_hydrogen : Union[float, str, duq.Quantity]
+        """
+
         super().__init__()
 
         # Verify that arguments are either all numbers, or all strings/duq.Quantity
