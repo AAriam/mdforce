@@ -188,7 +188,7 @@ class ForceField:
         self._update_bond_vibration()
         self._update_angle_vibration()
         self._force_total[...] = (
-                self._force_coulomb + self._force_lj + self._force_bond + self._force_angle
+            self._force_coulomb + self._force_lj + self._force_bond + self._force_angle
         )
         return
 
@@ -248,7 +248,7 @@ class ForceField:
         return
 
     def _calculate_lj_params_a_b(
-            self, lj_epsilon: Union[float, duq.Quantity], lj_sigma: Union[float, duq.Quantity]
+        self, lj_epsilon: Union[float, duq.Quantity], lj_sigma: Union[float, duq.Quantity]
     ) -> Tuple[Union[float, duq.Quantity], Union[float, duq.Quantity]]:
         """
         Calculate the Lennard-Jones parameters A and B, from epsilon and sigma.
@@ -454,4 +454,3 @@ class ForceField:
         if self._model_name is None:
             raise ValueError("The force-field was not created from a parameter model.")
         return
-

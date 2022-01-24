@@ -34,7 +34,6 @@ class Flexible3SiteSPC(ForceField):
     """
 
     __slots__ = [
-
         "_mass_o",
         "_mass_h",
         "_coulomb_k",
@@ -145,7 +144,6 @@ class Flexible3SiteSPC(ForceField):
             angle_eq_angle=angle_eq,
             mass_oxygen=mass_o,
             mass_hydrogen=mass_h,
-
         )
 
         # Set the parameters-model info
@@ -229,59 +227,69 @@ class Flexible3SiteSPC(ForceField):
 
         # Store parameters
         self._bond_k = (
-            bond_force_constant if self._unitless else helpers.convert_to_quantity(
-                            bond_force_constant, self._dim_bond_vib_k, "bond_force_constant"
+            bond_force_constant
+            if self._unitless
+            else helpers.convert_to_quantity(
+                bond_force_constant, self._dim_bond_vib_k, "bond_force_constant"
             )
         )
         self._bond_eq_len = (
-            bond_eq_dist if self._unitless else helpers.convert_to_quantity(
-                bond_eq_dist, self._dim_bond_eq_dist, "bond_eq_dist"
-            )
+            bond_eq_dist
+            if self._unitless
+            else helpers.convert_to_quantity(bond_eq_dist, self._dim_bond_eq_dist, "bond_eq_dist")
         )
         self._angle_k = (
-            angle_force_constant if self._unitless else helpers.convert_to_quantity(
+            angle_force_constant
+            if self._unitless
+            else helpers.convert_to_quantity(
                 angle_force_constant, self._dim_angle_vib_k, "angle_force_constant"
             )
         )
         self._angle_eq = (
-            angle_eq_angle if self._unitless else helpers.convert_to_quantity(
+            angle_eq_angle
+            if self._unitless
+            else helpers.convert_to_quantity(
                 angle_eq_angle, self._dim_angle_eq_angle, "angle_eq_angle"
             )
         )
         self._lj_epsilon_oo = (
-            lennard_jones_epsilon_oo if self._unitless else helpers.convert_to_quantity(
+            lennard_jones_epsilon_oo
+            if self._unitless
+            else helpers.convert_to_quantity(
                 lennard_jones_epsilon_oo, self._dim_lj_epsilon, "lennard_jones_epsilon_oo"
             )
         )
         self._lj_sigma_oo = (
-            lennard_jones_sigma_oo if self._unitless else helpers.convert_to_quantity(
+            lennard_jones_sigma_oo
+            if self._unitless
+            else helpers.convert_to_quantity(
                 lennard_jones_sigma_oo, self._dim_lj_sigma, "lennard_jones_sigma_oo"
             )
         )
         self._charge_o = (
-            charge_oxygen if self._unitless else helpers.convert_to_quantity(
-                charge_oxygen, self._dim_charge, "charge_oxygen"
-            )
+            charge_oxygen
+            if self._unitless
+            else helpers.convert_to_quantity(charge_oxygen, self._dim_charge, "charge_oxygen")
         )
         self._charge_h = (
-            charge_hydrogen if self._unitless else helpers.convert_to_quantity(
-                charge_hydrogen, self._dim_charge, "charge_hydrogen"
-            )
+            charge_hydrogen
+            if self._unitless
+            else helpers.convert_to_quantity(charge_hydrogen, self._dim_charge, "charge_hydrogen")
         )
         self._coulomb_k = (
-            coulomb_const if self._unitless else helpers.convert_to_quantity(
-                coulomb_const, self._dim_coulomb_k, "coulomb_const"
-            )
+            coulomb_const
+            if self._unitless
+            else helpers.convert_to_quantity(coulomb_const, self._dim_coulomb_k, "coulomb_const")
         )
         self._mass_o = (
-            mass_oxygen if self._unitless else helpers.convert_to_quantity(
-                mass_oxygen, self._dim_mass, "mass_oxygen"
-            )
+            mass_oxygen
+            if self._unitless
+            else helpers.convert_to_quantity(mass_oxygen, self._dim_mass, "mass_oxygen")
         )
         self._mass_h = (
-            mass_hydrogen if self._unitless else helpers.convert_to_quantity(
-                mass_hydrogen, self._dim_mass, "mass_hydrogen"
-            )
+            mass_hydrogen
+            if self._unitless
+            else helpers.convert_to_quantity(mass_hydrogen, self._dim_mass, "mass_hydrogen")
         )
 
         # Calculate Lennard-Jones parameters A and B from epsilon and sigma
@@ -325,9 +333,9 @@ class Flexible3SiteSPC(ForceField):
         self._fitted = False  # Whether the model has been fitted to input data.
 
     def fit_units_to_input_data(
-            self,
-            unit_length: Union[str, duq.Unit],
-            unit_time: Union[str, duq.Unit],
+        self,
+        unit_length: Union[str, duq.Unit],
+        unit_time: Union[str, duq.Unit],
     ) -> None:
         """
         Make the force-field parameters' units compatible to those of the input data.
@@ -537,8 +545,8 @@ class Flexible3SiteSPC(ForceField):
             # atoms in the same molecule (these are the next two atoms after each oxygen)
             # as two single arrays
             dist_vectors = self._distance_vectors[
-                           idx_curr_atom, idx_curr_atom + 1: idx_curr_atom + 3
-                           ]
+                idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3
+            ]
             dists = self._distances[idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3]
 
             # Calculate common terms only once
@@ -646,7 +654,7 @@ class Flexible3SiteSPC(ForceField):
         for idx_atom, coord_atom in enumerate(positions[:-1]):
             # Calculate distance vectors between that atom and all other atoms after it
             self._distance_vectors[idx_atom, idx_atom + 1 :] = (
-                    coord_atom - positions[idx_atom + 1 :]
+                coord_atom - positions[idx_atom + 1 :]
             )
         # Calculate all distances at once, from the distance vectors
         self._distances[...] = np.linalg.norm(self._distance_vectors, axis=2)
@@ -661,13 +669,18 @@ class Flexible3SiteSPC(ForceField):
         """
 
         str_repr = (
-            (f"Model Metadata:\n--------------\n{self.model_metadata}\n\n"
-             if self._model_name is not None else "") +
-            f"Model Parameters:\n----------------\n" +
-            ("(parameters have not yet been converted into the units of input data)\n"
-             if not self._fitted else
-             "(with converted values fitted to input data after equal sign)\n") +
-            f"\t{self._desc_charge_o} (q_O):\n"
+            (
+                f"Model Metadata:\n--------------\n{self.model_metadata}\n\n"
+                if self._model_name is not None
+                else ""
+            )
+            + f"Model Parameters:\n----------------\n"
+            + (
+                "(parameters have not yet been converted into the units of input data)\n"
+                if not self._fitted
+                else "(with converted values fitted to input data after equal sign)\n"
+            )
+            + f"\t{self._desc_charge_o} (q_O):\n"
             f"{self._charge_o.str_repr_short}"
             + (f" = {self._charge_o_converted.str_repr_short}\n" if self._fitted else "\n")
             + f"\t{self._desc_charge_h} (q_H):\n"
@@ -680,9 +693,9 @@ class Flexible3SiteSPC(ForceField):
             f"{self._lj_sigma_oo.str_repr_short}"
             + (f" = {self._lj_sigma_oo_converted.str_repr_short}\n" if self._fitted else "\n")
             + f"\tLennard-Jones parameter A:\n"
-              f"{self._lj_a.str_repr_short}"
+            f"{self._lj_a.str_repr_short}"
             + (f" = {self._lj_a_converted.str_repr_short}\n" if self._fitted else "\n")
-            + f"\tLennard-Jones parameter B:\n" 
+            + f"\tLennard-Jones parameter B:\n"
             f"{self._lj_b.str_repr_short}"
             + (f" = {self._lj_b_converted.str_repr_short}\n" if self._fitted else "\n")
             + f"\t{self._desc_bond_k} (k_bond):\n"
@@ -699,4 +712,3 @@ class Flexible3SiteSPC(ForceField):
             + (f" = {self._angle_eq_converted.str_repr_short}" if self._fitted else "")
         )
         return str_repr
-
