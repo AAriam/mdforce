@@ -1,8 +1,14 @@
 """
-Implementation of the individual terms of a general force field. Each function calculates the force
-on a single target particle `q_i`, due to another single particle `q_j`, except for
-`angle_vibration`, which takes in three particles and calculates the force on each of them.
-Moreover, each function also returns the potential energy of the system of two particles.
+Implementation of the individual terms of a general force field.
+
+Each function calculates the force on a single target particle `i`, due to another single particle
+`j` (except for `angle_vibration_harmonic`, which takes in three particles and calculates the force
+on each of them). Moreover, each function also returns the potential energy of the system of
+particles.
+
+These functions are mostly intended for testing purposes; They are one step more complicated than
+the equivalent functions in module `terms_single_simple`, and accept the position vector arguments
+as numpy arrays.
 """
 
 # 3rd-party
@@ -11,220 +17,208 @@ import numpy.linalg as lin
 
 
 def coulomb(
-    q_i: np.ndarray, q_j: np.ndarray, c_i: float, c_j: float, k: float
+    q_i: np.ndarray, q_j: np.ndarray, c_i: float, c_j: float, k_e: float
 ) -> tuple[np.ndarray, float]:
     """
-    Calculate the Coulomb potential between two particles,
-    and force on the first particle due to the second particle.
+    Calculate the coulomb potential between two particles 'i' and 'j', and force on 'i' due to 'j'.
 
     Parameters
     ----------
     q_i : numpy.ndarray
-        Coordinates of the target particle.
-        The calculated force will be for this particle.
+        Coordinates vector of particle 'i' as a 1D-array of shape (n, ), where 'n' is the number of
+        spatial dimensions. The calculated force will be for this particle.
     q_j : numpy.ndarray
-        Coordinates of the other particle.
+        Coordinates vector of particle 'j' as a 1D-array of shape (n, ), where 'n' is the number of
+        spatial dimensions.
     c_i : float
-        Charge of the target particle.
+        Charge of particle 'i'.
     c_j : float
-        Charge of the other particle.
-    k : float
+        Charge of particle 'j'.
+    k_e : float
         Coulomb constant, i.e. (1 / 4πε0).
 
     Returns
     -------
-    force_vector, potential : tuple[numpy.ndarray, float]
-        Force vector for the target particle,
-        followed by potential energy of the system.
+    force_i, potential_ij : tuple[numpy.ndarray, float]
+        Force vector for particle 'i' due to particle 'j', followed by the potential energy between
+        the two particles.
 
     Notes
     -----
-    The force vector for the other particle due
-    to the target particle will be the same vector
-    as the return value, only with opposite sign.
+    The force vector for particle 'j' due to particle 'i' will be the same vector as the return
+    value, only with opposite sign, whereas the potential will not change.
     """
-
     # Calculate common terms
-    r_ji = q_i - q_j
-    dist = lin.norm(r_ji)
-
+    q_ji = q_i - q_j
+    dist_ji = lin.norm(q_ji)
     # Calculate potential
-    e = k * c_i * c_j / dist
-
+    pot_ij = k_e * c_i * c_j / dist_ji
     # Calculate force
-    f_i = e * r_ji / dist ** 2
-    return f_i, e
+    f_i = pot_ij * q_ji / dist_ji ** 2
+    return f_i, pot_ij
 
 
 def lennard_jones(
-    q_i: np.ndarray, q_j: np.ndarray, a: float, b: float
+    q_i: np.ndarray, q_j: np.ndarray, a_ij: float, b_ij: float
 ) -> tuple[np.ndarray, float]:
     """
-    Calculate the Lennard-Jones potential between two particles,
-    and force on the first particle due to the second particle.
+    Calculate the Lennard-Jones potential between two particles 'i' and 'j', and force on 'i' due
+    to 'j'.
 
     Parameters
     ----------
     q_i : numpy.ndarray
-        Coordinates of the target particle.
-        The calculated force will be for this particle.
+        Coordinates vector of particle 'i' as a 1D-array of shape (n, ), where 'n' is the number of
+        spatial dimensions. The calculated force will be for this particle.
     q_j : numpy.ndarray
-        Coordinates of the other particle.
-    a : float
+        Coordinates vector of particle 'j' as a 1D-array of shape (n, ), where 'n' is the number of
+        spatial dimensions.
+    a_ij : float
         A-parameter of the Lennard-Jones potential for the two particles.
-    b : float
+    b_ij : float
         B-parameter of the Lennard-Jones potential for the two particles.
 
     Returns
     -------
-    force_vector, potential : tuple[numpy.ndarray, float]
-        Force vector for the target particle,
-        followed by potential energy of the system.
+    force_i, potential_ij : tuple[numpy.ndarray, float]
+        Force vector for particle 'i' due to particle 'j', followed by the potential energy between
+        the two particles.
 
     Notes
     -----
-    The force vector for the other particle due
-    to the target particle will be the same vector
-    as the return value, only with opposite sign.
+    The force vector for particle 'j' due to particle 'i' will be the same vector as the return
+    value, only with opposite sign, whereas the potential will not change.
     """
-
     # calculate common terms
-    r_ji = q_i - q_j
-    dist = lin.norm(r_ji)
-    inverse_dist_2 = 1 / dist ** 2
+    q_ji = q_i - q_j
+    dist_ji = lin.norm(q_ji)
+    inverse_dist_2 = 1 / dist_ji ** 2
     inverse_dist_6 = inverse_dist_2 ** 3
-
     # calculate potential using common terms
-    e_attractive = -b * inverse_dist_6
-    e_repulsive = a * inverse_dist_6 ** 2
-    e = e_repulsive + e_attractive
-
+    pot_ij_attractive = -b_ij * inverse_dist_6
+    pot_ij_repulsive = a_ij * inverse_dist_6 ** 2
+    pot_ij = pot_ij_repulsive + pot_ij_attractive
     # calculate force using the calculated potential and common terms
-    f_repulsive = 12 * e_repulsive
-    f_attractive = 6 * e_attractive
-    f_i = (f_attractive + f_repulsive) * inverse_dist_2 * r_ji
-    return f_i, e
+    f_repulsive = 12 * pot_ij_repulsive
+    f_attractive = 6 * pot_ij_attractive
+    f_i = (f_attractive + f_repulsive) * inverse_dist_2 * q_ji
+    return f_i, pot_ij
 
 
 def bond_vibration_harmonic(
-    q_i: np.ndarray, q_j: np.ndarray, dist_eq: float, k: float
+    q_i: np.ndarray, q_j: np.ndarray, dist_eq: float, k_b: float
 ) -> tuple[np.ndarray, float]:
     """
-    Calculate the harmonic bond-stretching potential between two bonded particles,
-    and force on the first particle due to the second particle.
+    Calculate the harmonic bond-vibration potential between two particles 'i' and 'j', and force on
+    'i' due to 'j'.
 
     Parameters
     ----------
     q_i : numpy.ndarray
-        Coordinates of the target particle.
-        The calculated force will be for this particle.
+        Coordinates vector of particle 'i' as a 1D-array of shape (n, ), where 'n' is the number of
+        spatial dimensions. The calculated force will be for this particle.
     q_j : numpy.ndarray
-        Coordinates of the other particle.
+        Coordinates vector of particle 'j' as a 1D-array of shape (n, ), where 'n' is the number of
+        spatial dimensions.
     dist_eq : float
-        Equilibrium bond length
-    k : float
-        Force constant of the harmonic potential.
+        Equilibrium bond length.
+    k_b : float
+        Force constant of the harmonic bond potential.
 
     Returns
     -------
-    force_vector, potential : tuple[numpy.ndarray, float]
-        Force vector for the target particle,
-        followed by potential energy of the system.
+    force_i, potential_ij : tuple[numpy.ndarray, float]
+        Force vector for particle 'i' due to particle 'j', followed by the potential energy between
+        the two particles.
 
     Notes
     -----
-    The force vector for the other particle due
-    to the target particle will be the same vector
-    as the return value, only with opposite sign.
+    The force vector for particle 'j' due to particle 'i' will be the same vector as the return
+    value, only with opposite sign, whereas the potential will not change.
     """
-
     # Calculate common terms
-    r_ji = q_i - q_j
-    dist = lin.norm(r_ji)
-    displacement = dist - dist_eq
-    k_times_displ = k * displacement
-
+    q_ji = q_i - q_j
+    dist_ji = lin.norm(q_ji)
+    displacement = dist_ji - dist_eq
+    k_times_displ = k_b * displacement
     # Calculate potential
-    e = k_times_displ * displacement / 2
-
+    pot_ij = k_times_displ * displacement / 2
     # Calculate force
-    f_i = (-k_times_displ / dist) * r_ji
-    return f_i, e
+    f_i = (-k_times_displ / dist_ji) * q_ji
+    return f_i, pot_ij
 
 
 def angle_vibration_harmonic(
-    q_m: np.ndarray, q_l: np.ndarray, q_r: np.ndarray, angle_eq: float, k: float
+    q_j: np.ndarray, q_i: np.ndarray, q_k: np.ndarray, angle_eq: float, k_a: float
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
     """
-    Calculate the harmonic angle-vibration potential between three linearly bonded particles,
-    and force on each of the three particles.
+    Calculate the angle-vibration potential between three linearly bonded particles 'i', 'j' and
+    'k' (where 'j' is the particle in the middle), and force on each one of them.
 
     Parameters
     ----------
-    q_m : numpy.ndarray
-        Coordinates of the particle in the middle of the triplet.
-    q_l : numpy.ndarray
-        Coordinates of the particle on one end of the triplet.
-    q_r : numpy.ndarray
-        Coordinates of the particle on the other end of the triplet.
+    q_j : numpy.ndarray
+        Coordinates vector of particle 'j' as a 1D-array of shape (n, ), where 'n' is the number of
+        spatial dimensions. This is the particle in the middle of the triplet.
+    q_i : numpy.ndarray
+        Coordinates vector of particle 'i' as a 1D-array of shape (n, ), where 'n' is the number of
+        spatial dimensions.
+    q_k : numpy.ndarray
+        Coordinates vector of particle 'k' as a 1D-array of shape (n, ), where 'n' is the number of
+        spatial dimensions.
     angle_eq : float
         Equilibrium angle in radian.
-    k : float
-        Force constant of the harmonic potential.
+    k_a : float
+        Force constant of the harmonic angle potential.
 
     Returns
     -------
-    force_vect_m, force_vect_l, force_vect_r, potential : tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, float]
-        Force vector for each of the three particles in the order (mid, left, right),
-        followed by potential energy of the system.
+    force_j, force_i, force_k, potential_ijk :
+    tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, float]
+        Force vector for each of the three particles in the order (j, i, k), followed by potential
+        energy between the three particles.
     """
 
-    # calculate the angle theta
-    r_ml = q_l - q_m
-    r_mr = q_r - q_m
-    dist_ml = lin.norm(r_ml)
-    dist_mr = lin.norm(r_mr)
-    cos = np.dot(r_ml, r_mr) / (dist_ml * dist_mr)
-    # due to floating point calculation errors, sometimes
-    # cos will be slightly greater than 1 or smaller than -1,
-    # in which case the angle cannot be calculated by the arccos.
-    # Thus check the value of cos, and correct it if necessary.
-    if 1 > cos > -1:
-        pass
-    elif np.isclose(cos, 1):
-        cos = 1
-    elif np.isclose(cos, -1):
-        cos = -1
-    else:
-        raise ValueError(f"Calculated cosine {cos} does not lie within the range of [-1, 1].")
+    # Calculate distance vectors
+    q_ji = q_i - q_j
+    q_jk = q_k - q_j
+    # Calculate the norm of vectors
+    dist_ji = lin.norm(q_ji)
+    dist_jk = lin.norm(q_jk)
+    # Calculate cosine of angle using the dot product formula
+    cos = np.dot(q_ji, q_jk) / (dist_ji * dist_jk)
+    # Raise error if cosine is not withing the range (-1, 1)
+    if not (-1 < cos < 1):
+        raise ValueError(f"Calculated cosine {cos} does not lie within the range (-1, 1).")
+    # Calculate angle from cosine
     angle = np.arccos(cos)
 
     # Calculate common terms
     sin = np.sin(angle)
     angle_displacement = angle - angle_eq
-    a = k * angle_displacement / sin
-    dist_ml_mult_dist_mr = dist_ml * dist_mr
-    r_ml_div_dist2_ml = r_ml / dist_ml ** 2
-    r_mr_div_dist2_mr = r_mr / dist_mr ** 2
+    a = k_a * angle_displacement / sin
+    dist_ji_mult_dist_jk = dist_ji * dist_jk
+    q_ji_div_dist2_ji = q_ji / dist_ji ** 2
+    q_jk_div_dist2_jk = q_jk / dist_jk ** 2
 
     # Calculate potential
-    e = k * angle_displacement ** 2
+    pot_ijk = k_a * angle_displacement ** 2
 
-    # Calculate f_l
-    b1 = r_mr / dist_ml_mult_dist_mr
-    c1 = cos * r_ml_div_dist2_ml
-    f_l = a * (b1 - c1)
+    # Calculate force for particle 'i'
+    b_i = q_jk / dist_ji_mult_dist_jk
+    c_i = cos * q_ji_div_dist2_ji
+    f_i = a * (b_i - c_i)
 
-    # Calculate f_r
-    b2 = r_ml / dist_ml_mult_dist_mr
-    c2 = cos * r_mr_div_dist2_mr
-    f_r = a * (b2 - c2)
+    # Calculate force for particle 'k'
+    b_k = q_ji / dist_ji_mult_dist_jk
+    c_k = cos * q_jk_div_dist2_jk
+    f_k = a * (b_k - c_k)
 
-    # Calculate f_m
-    b3 = -(r_ml + r_mr) / dist_ml_mult_dist_mr
-    c3 = cos * (r_ml_div_dist2_ml + r_mr_div_dist2_mr)
-    f_m = a * (b3 + c3)
-    return f_m, f_l, f_r, e
+    # Calculate force for particle 'j' (the middle particle)
+    b_j = -(q_ji + q_jk) / dist_ji_mult_dist_jk
+    c_j = cos * (q_ji_div_dist2_ji + q_jk_div_dist2_jk)
+    f_j = a * (b_j + c_j)
+    return f_j, f_i, f_k, pot_ijk
 
 
 def dihedral():
