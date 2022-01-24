@@ -159,8 +159,8 @@ def test_bond_vibration_harmonic():
             q_j_x=vals["q_j_x"],
             q_j_y=vals["q_j_y"],
             q_j_z=vals["q_j_z"],
-            k_b=vals["k_b"],
             dist_eq=vals["q_eq"],
+            k_b=vals["k_b"],
         )
 
         # Compare the results
@@ -177,8 +177,8 @@ def test_bond_vibration_harmonic():
             q_j_x=vals["q_i_x"],
             q_j_y=vals["q_i_y"],
             q_j_z=vals["q_i_z"],
-            k_b=vals["k_b"],
             dist_eq=vals["q_eq"],
+            k_b=vals["k_b"],
         )
         assert np.isclose(pot_ji, vals["pot"])
         assert np.isclose(f_j_x, -vals["f_i_x"])
@@ -241,8 +241,8 @@ def test_angle_vibration_harmonic():
             q_k_x=vals["q_k_x"],
             q_k_y=vals["q_k_y"],
             q_k_z=vals["q_k_z"],
-            k_a=vals["k_a"],
             angle_eq=vals["angle_eq"],
+            k_a=vals["k_a"],
         )
 
         # Compare the results
@@ -280,8 +280,8 @@ def test_angle_vibration_harmonic():
             q_k_x=vals["q_i_x"],
             q_k_y=vals["q_i_y"],
             q_k_z=vals["q_i_z"],
-            k_a=vals["k_a"],
             angle_eq=vals["angle_eq"],
+            k_a=vals["k_a"],
         )
         assert np.isclose(pot_ijk, pot_kji)
         assert np.isclose(f_i_x, f_i_x2)
