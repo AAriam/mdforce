@@ -1,13 +1,59 @@
 """
 Implementation of the individual terms of a general force field. Each function calculates the force
-on a single target particle `q_i`, due to another single particle `q_j`, except for `angle_vibration`,
-which takes in three particles and calculates the force on each of them.
+on a single target particle `q_i`, due to another single particle `q_j`, except for
+`angle_vibration`, which takes in three particles and calculates the force on each of them.
 Moreover, each function also returns the potential energy of the system of two particles.
 """
 
 # 3rd-party
 import numpy as np
 import numpy.linalg as lin
+
+
+def coulomb(
+    q_i: np.ndarray, q_j: np.ndarray, c_i: float, c_j: float, k: float
+) -> tuple[np.ndarray, float]:
+    """
+    Calculate the Coulomb potential between two particles,
+    and force on the first particle due to the second particle.
+
+    Parameters
+    ----------
+    q_i : numpy.ndarray
+        Coordinates of the target particle.
+        The calculated force will be for this particle.
+    q_j : numpy.ndarray
+        Coordinates of the other particle.
+    c_i : float
+        Charge of the target particle.
+    c_j : float
+        Charge of the other particle.
+    k : float
+        Coulomb constant, i.e. (1 / 4πε0).
+
+    Returns
+    -------
+    force_vector, potential : tuple[numpy.ndarray, float]
+        Force vector for the target particle,
+        followed by potential energy of the system.
+
+    Notes
+    -----
+    The force vector for the other particle due
+    to the target particle will be the same vector
+    as the return value, only with opposite sign.
+    """
+
+    # Calculate common terms
+    r_ji = q_i - q_j
+    dist = lin.norm(r_ji)
+
+    # Calculate potential
+    e = k * c_i * c_j / dist
+
+    # Calculate force
+    f_i = e * r_ji / dist ** 2
+    return f_i, e
 
 
 def lennard_jones(
@@ -57,52 +103,6 @@ def lennard_jones(
     f_repulsive = 12 * e_repulsive
     f_attractive = 6 * e_attractive
     f_i = (f_attractive + f_repulsive) * inverse_dist_2 * r_ji
-    return f_i, e
-
-
-def coulomb(
-    q_i: np.ndarray, q_j: np.ndarray, c_i: float, c_j: float, k: float
-) -> tuple[np.ndarray, float]:
-    """
-    Calculate the Coulomb potential between two particles,
-    and force on the first particle due to the second particle.
-
-    Parameters
-    ----------
-    q_i : numpy.ndarray
-        Coordinates of the target particle.
-        The calculated force will be for this particle.
-    q_j : numpy.ndarray
-        Coordinates of the other particle.
-    c_i : float
-        Charge of the target particle.
-    c_j : float
-        Charge of the other particle.
-    k : float
-        Coulomb constant, i.e. (1 / 4πε0).
-
-    Returns
-    -------
-    force_vector, potential : tuple[numpy.ndarray, float]
-        Force vector for the target particle,
-        followed by potential energy of the system.
-
-    Notes
-    -----
-    The force vector for the other particle due
-    to the target particle will be the same vector
-    as the return value, only with opposite sign.
-    """
-
-    # Calculate common terms
-    r_ji = q_i - q_j
-    dist = lin.norm(r_ji)
-
-    # Calculate potential
-    e = k * c_i * c_j / dist
-
-    # Calculate force
-    f_i = e * r_ji / dist ** 2
     return f_i, e
 
 
