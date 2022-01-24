@@ -7,7 +7,7 @@ Moreover, each function also returns the potential energy of each particle-pair/
 
 import numpy as np
 
-from . import terms_simple
+from . import terms_single_array
 
 
 def lennard_jones(q, pair_idx, ab):
