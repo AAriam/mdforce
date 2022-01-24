@@ -11,6 +11,9 @@ the equivalent functions in module `terms_single_simple`, and accept the positio
 as numpy arrays.
 """
 
+# Standard library
+from typing import Tuple
+
 # 3rd-party
 import numpy as np
 import numpy.linalg as lin
@@ -18,7 +21,7 @@ import numpy.linalg as lin
 
 def coulomb(
     q_i: np.ndarray, q_j: np.ndarray, c_i: float, c_j: float, k_e: float
-) -> tuple[np.ndarray, float]:
+) -> Tuple[np.ndarray, float]:
     """
     Calculate the coulomb potential between two particles 'i' and 'j', and force on 'i' due to 'j'.
 
@@ -39,7 +42,7 @@ def coulomb(
 
     Returns
     -------
-    force_i, potential_ij : tuple[numpy.ndarray, float]
+    force_i, potential_ij : Tuple[numpy.ndarray, float]
         Force vector for particle 'i' due to particle 'j', followed by the potential energy between
         the two particles.
 
@@ -60,7 +63,7 @@ def coulomb(
 
 def lennard_jones(
     q_i: np.ndarray, q_j: np.ndarray, a_ij: float, b_ij: float
-) -> tuple[np.ndarray, float]:
+) -> Tuple[np.ndarray, float]:
     """
     Calculate the Lennard-Jones potential between two particles 'i' and 'j', and force on 'i' due
     to 'j'.
@@ -107,7 +110,7 @@ def lennard_jones(
 
 def bond_vibration_harmonic(
     q_i: np.ndarray, q_j: np.ndarray, dist_eq: float, k_b: float
-) -> tuple[np.ndarray, float]:
+) -> Tuple[np.ndarray, float]:
     """
     Calculate the harmonic bond-vibration potential between two particles 'i' and 'j', and force on
     'i' due to 'j'.
@@ -150,7 +153,7 @@ def bond_vibration_harmonic(
 
 def angle_vibration_harmonic(
     q_j: np.ndarray, q_i: np.ndarray, q_k: np.ndarray, angle_eq: float, k_a: float
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
     """
     Calculate the angle-vibration potential between three linearly bonded particles 'i', 'j' and
     'k' (where 'j' is the particle in the middle), and force on each one of them.
@@ -202,7 +205,7 @@ def angle_vibration_harmonic(
     q_jk_div_dist2_jk = q_jk / dist_jk ** 2
 
     # Calculate potential
-    pot_ijk = k_a * angle_displacement ** 2
+    pot_ijk = 0.5 * k_a * angle_displacement ** 2
 
     # Calculate force for particle 'i'
     b_i = q_jk / dist_ji_mult_dist_jk
