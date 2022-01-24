@@ -34,21 +34,7 @@ class Flexible3SiteSPC(ForceField):
     """
 
     __slots__ = [
-        "_distance_vectors",
-        "_distances",
-        "_acceleration",
-        "_force_total",
-        "_force_coulomb",
-        "_force_lj",
-        "_force_bond",
-        "_force_angle",
-        "_angles",
-        "_energy_coulomb",
-        "_energy_lj",
-        "_energy_bond",
-        "_energy_angle",
-        "_num_atoms",
-        "_num_molecules",
+
         "_mass_o",
         "_mass_h",
         "_coulomb_k",
@@ -74,11 +60,6 @@ class Flexible3SiteSPC(ForceField):
         "_angle_k_converted",
         "_angle_eq",
         "_angle_eq_converted",
-        "_model_name",
-        "_model_description",
-        "_model_ref_name",
-        "_model_ref_cite",
-        "_model_ref_link",
         "_unit_length",
         "_unit_time",
         "_unit_force",
@@ -93,6 +74,8 @@ class Flexible3SiteSPC(ForceField):
         "__eq_dist",
         "__k_a",
         "__eq_angle",
+        "__m_o",
+        "__m_h",
         "_unitless",
     ]
 
@@ -323,6 +306,22 @@ class Flexible3SiteSPC(ForceField):
         self._unit_time = None
         self._unit_force = None
         self._unit_energy = None
+
+        # Attributes holding numerical values of all parameters
+        # If parameters were inputted as pure numbers, these are then directly set here,
+        # otherwise they are set after calling the `fit_units_to_input_data` method.
+        self.__c_o = self._charge_o if self._unitless else None
+        self.__c_h = self._charge_h if self._unitless else None
+        self.__k_e = self._coulomb_k if self._unitless else None
+        self.__lj_a = self._lj_a if self._unitless else None
+        self.__lj_b = self._lj_b if self._unitless else None
+        self.__k_b = self._bond_k if self._unitless else None
+        self.__eq_dist = self._bond_eq_len if self._unitless else None
+        self.__k_a = self._angle_k if self._unitless else None
+        self.__eq_angle = self._angle_eq if self._unitless else None
+        self.__m_o = self._mass_o if self._unitless else None
+        self.__m_h = self._mass_h if self._unitless else None
+
         self._fitted = False  # Whether the model has been fitted to input data.
 
     def fit_units_to_input_data(
@@ -355,22 +354,23 @@ class Flexible3SiteSPC(ForceField):
             self._unit_length = helpers.convert_to_unit(unit_length, "length", "unit_length")
             self._unit_time = helpers.convert_to_unit(unit_time, "time", "unit_time")
 
+        # Calculate and verify general units
         self._unit_force = self._unit_mass * self._unit_length / self._unit_time ** 2
         helpers.raise_for_dimension(self._unit_force, "force", "_unit_force")
         self._unit_energy = self._unit_force * self._unit_length
         helpers.raise_for_dimension(self._unit_energy, "energy", "_unit_energy")
 
-        # Coulomb
+        # Convert coulomb units
         self._charge_o_converted = self._charge_o.convert_unit(self._unit_charge)
         self._charge_h_converted = self._charge_h.convert_unit(self._unit_charge)
-        unit_k = self._unit_energy * self._unit_length / self._unit_charge ** 2
-        helpers.raise_for_dimension(unit_k, self._dim_coulomb_k, "unit_k")
-        self._coulomb_k_converted = self._coulomb_k.convert_unit(unit_k)
+        unit_coulomb_k = self._unit_energy * self._unit_length / self._unit_charge ** 2
+        helpers.raise_for_dimension(unit_coulomb_k, self._dim_coulomb_k, "unit_coulomb_k")
+        self._coulomb_k_converted = self._coulomb_k.convert_unit(unit_coulomb_k)
         self.__c_o = self._charge_o_converted.value
         self.__c_h = self._charge_h_converted.value
         self.__k_e = self._coulomb_k_converted.value
 
-        # Lennard-Jones
+        # Convert Lennard-Jones units
         self._lj_sigma_oo_converted = self._lj_sigma_oo.convert_unit(self._unit_length)
         self._lj_epsilon_oo_converted = self._lj_epsilon_oo.convert_unit(self._unit_energy)
         self._lj_a_converted = self._lj_a.convert_unit(self._unit_energy * self._unit_length ** 12)
@@ -380,18 +380,19 @@ class Flexible3SiteSPC(ForceField):
         self.__lj_a = self._lj_a_converted.value
         self.__lj_b = self._lj_b_converted.value
 
-        # Bond vibration
-        unit_k = self._unit_energy / self._unit_length ** 2
-        self._bond_k_converted = self._bond_k.convert_unit(unit_k)
+        # Convert bond vibration units
+        unit_bond_k = self._unit_energy / self._unit_length ** 2
+        helpers.raise_for_dimension(unit_bond_k, self._dim_bond_vib_k, "unit_bond_k")
+        self._bond_k_converted = self._bond_k.convert_unit(unit_bond_k)
         self._bond_eq_len_converted = self._bond_eq_len.convert_unit(self._unit_length)
         self.__k_b = self._bond_k_converted.value
         self.__eq_dist = self._bond_eq_len_converted.value
 
-        # Angle vibration
-        unit_angle = duq.Unit("rad")
-        unit_k = self._unit_energy / unit_angle ** 2
-        self._angle_k_converted = self._angle_k.convert_unit(unit_k)
-        self._angle_eq_converted = self._angle_eq.convert_unit(unit_angle)
+        # Convert angle vibration units
+        unit_angle_k = self._unit_energy / self._unit_angle ** 2
+        helpers.raise_for_dimension(unit_angle_k, self._dim_angle_vib_k, "unit_angle_k")
+        self._angle_k_converted = self._angle_k.convert_unit(unit_angle_k)
+        self._angle_eq_converted = self._angle_eq.convert_unit(self._unit_angle)
         self.__k_a = self._angle_k_converted.value
         self.__eq_angle = self._angle_eq_converted.value
 
@@ -406,13 +407,16 @@ class Flexible3SiteSPC(ForceField):
             self._num_molecules,
         )
 
+        self.__m_o = self._mass_o.value
+        self.__m_h = self._mass_h.value
+
         self._fitted = True
         return
 
     def _update_acceleration(self):
-        self._acceleration[::3] = self._force_total[::3] / self._mass_o
-        self._acceleration[1::3] = self._force_total[1::3] / self._mass_h
-        self._acceleration[2::3] = self._force_total[2::3] / self._mass_h
+        self._acceleration[::3] = self._force_total[::3] / self.__m_o
+        self._acceleration[1::3] = self._force_total[1::3] / self.__m_h
+        self._acceleration[2::3] = self._force_total[2::3] / self.__m_h
         return
 
     def _update_coulomb(self) -> None:
@@ -674,13 +678,13 @@ class Flexible3SiteSPC(ForceField):
             + (f" = {self._lj_epsilon_oo_converted.str_repr_short}\n" if self._fitted else "\n")
             + f"\t{self._desc_lj_sigma_oo} (σ_OO):\n"
             f"{self._lj_sigma_oo.str_repr_short}"
-            + (
-                f" = {self._lj_sigma_oo_converted.str_repr_short}\n"
-                f"\tLennard-Jones parameter A: {self._lj_a.str_repr_short}\n"
-                f"\tLennard-Jones parameter B: {self._lj_b.str_repr_short}\n"
-                if self._fitted
-                else "\n"
-            )
+            + (f" = {self._lj_sigma_oo_converted.str_repr_short}\n" if self._fitted else "\n")
+            + f"\tLennard-Jones parameter A:\n"
+              f"{self._lj_a.str_repr_short}"
+            + (f" = {self._lj_a_converted.str_repr_short}\n" if self._fitted else "\n")
+            + f"\tLennard-Jones parameter B:\n" 
+            f"{self._lj_b.str_repr_short}"
+            + (f" = {self._lj_b_converted.str_repr_short}\n" if self._fitted else "\n")
             + f"\t{self._desc_bond_k} (k_bond):\n"
             f"{self._bond_k.str_repr_short}"
             + (f" = {self._bond_k_converted.str_repr_short}\n" if self._fitted else "\n")
