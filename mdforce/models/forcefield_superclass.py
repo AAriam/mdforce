@@ -18,6 +18,29 @@ from .. import helpers
 
 class ForceField:
 
+    __slots__ = (
+        "_distance_vectors",
+        "_distances",
+        "_acceleration",
+        "_force_total",
+        "_force_coulomb",
+        "_force_lj",
+        "_force_bond",
+        "_force_angle",
+        "_angles",
+        "_energy_coulomb",
+        "_energy_lj",
+        "_energy_bond",
+        "_energy_angle",
+        "_num_atoms",
+        "_num_molecules",
+        "_model_name",
+        "_model_description",
+        "_model_ref_name",
+        "_model_ref_cite",
+        "_model_ref_link",
+    )
+
     # Correct dimension of force-field parameters
     _dim_bond_vib_k = duq.Dimension("energy.length^-2")
     _dim_bond_eq_dist = duq.Dimension("length")
@@ -34,6 +57,7 @@ class ForceField:
     # Internal units of class data
     _unit_mass = duq.Unit("Da")
     _unit_charge = duq.Unit("e")
+    _unit_angle = duq.Unit("rad")
 
     # Pandas Dataframe containing several sets of parameters for the model.
     _dataframe = None
