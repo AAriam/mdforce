@@ -35,7 +35,7 @@ def find_interacting_partners_indices(mol_ids, atom_ids, bonded_atoms_idx):
         interacting partners for each interaction type, in the order:
         (Lennard-Jones, Coulomb, Bond-vibration, Angle-vibration)
     """
-    check_input_data(mol_ids, atom_ids, bonded_atoms_idx)
+    #check_input_data(mol_ids, atom_ids, bonded_atoms_idx)
     idx_lennard_jones = lennard_jones(atom_ids)
     idx_coulomb = coulomb(mol_ids)
     idx_bond_vibration = bond_vibration(bonded_atoms_idx)
