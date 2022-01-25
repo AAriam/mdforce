@@ -44,7 +44,7 @@ def lennard_jones(q, pair_idx, ab):
     f = np.zeros_like(q)
     e = np.zeros(q.shape[0])
     for idx, (i, j) in enumerate(pair_idx):
-        f_ij, e_ij = terms_simple.lennard_jones(q[i], q[j], ab[idx, 0], ab[idx, 1])
+        f_ij, e_ij = terms_single_array.lennard_jones(q[i], q[j], ab[idx, 0], ab[idx, 1])
         f[[i, j]] += f_ij, -f_ij
         e[[i, j]] += e_ij
     return f, e
@@ -86,7 +86,7 @@ def coulomb(q, pair_idx, c, k):
     f = np.zeros_like(q)
     e = np.zeros(q.shape[0])
     for i, j in pair_idx:
-        f_ij, e_ij = terms_simple.coulomb(q[i], q[j], c[i], c[j], k)
+        f_ij, e_ij = terms_single_array.coulomb(q[i], q[j], c[i], c[j], k)
         f[[i, j]] += f_ij, -f_ij
         e[[i, j]] += e_ij
     return f, e
@@ -129,7 +129,7 @@ def bond_vibration_harmonic(q, pair_idx, eq_dist, k):
     f = np.zeros_like(q)
     e = np.zeros(q.shape[0])
     for idx, (i, j) in enumerate(pair_idx):
-        f_ij, e_ij = terms_simple.bond_vibration_harmonic(q[i], q[j], eq_dist[idx], k)
+        f_ij, e_ij = terms_single_array.bond_vibration_harmonic(q[i], q[j], eq_dist[idx], k)
         f[[i, j]] += f_ij, -f_ij
         e[[i, j]] += e_ij
     return f, e
@@ -176,7 +176,7 @@ def angle_vibration_harmonic(q, pair_idx, eq_angle, k):
     # FIXME
     # remove angle (added for debugging)
     for idx, (m, l, r) in enumerate(pair_idx):
-        f_m, f_l, f_r, e_mlr, angle = terms_simple.angle_vibration_harmonic(
+        f_m, f_l, f_r, e_mlr, angle = terms_single_array.angle_vibration_harmonic(
             q[m], q[l], q[r], eq_angle[idx], k
         )
         f[[m, l, r]] += f_m, f_l, f_r
