@@ -5,7 +5,6 @@ functions in `mdforce.terms_single_array`.
 
 # 3rd-party packages
 import numpy as np
-
 # Self
 from mdforce import terms_single_array as terms_single
 from mdforce import terms_multi_iter as terms_iter
@@ -52,7 +51,7 @@ def test_coulomb():
         assert pot_calc[3] == pot04
         assert pot_calc[4] == pot12
         assert pot_calc[5] == pot13
-        return
+    return
 
 
 def test_lennard_jones():
@@ -92,7 +91,7 @@ def test_lennard_jones():
         assert pot_calc[3] == pot04
         assert pot_calc[4] == pot12
         assert pot_calc[5] == pot13
-        return
+    return
 
 
 def test_bond_vibration_harmonic():
@@ -146,7 +145,7 @@ def test_bond_vibration_harmonic():
         assert pot_calc[3] == pot04
         assert pot_calc[4] == pot12
         assert pot_calc[5] == pot13
-        return
+    return
 
 
 def test_angle_vibration_harmonic():
@@ -200,4 +199,4 @@ def test_angle_vibration_harmonic():
         assert pot_calc[3] == pot042
         assert pot_calc[4] == pot123
         assert pot_calc[5] == pot134
-        return
+    return
