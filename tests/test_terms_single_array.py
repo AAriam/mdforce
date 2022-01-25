@@ -3,9 +3,11 @@ Test functions for individual force-field terms in `mdforce.terms_single_array`,
 functions in `mdforce.terms_single_simple`.
 """
 
+# 3rd-party packages
+import numpy as np
+# Self
 from mdforce import terms_single_simple as terms_simple
 from mdforce import terms_single_array as terms_array
-import numpy as np
 
 
 # Set up random number generator with seed to make sure testing results are consistent
