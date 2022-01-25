@@ -230,7 +230,7 @@ def test_angle_vibration_harmonic():
             f_k_x,
             f_k_y,
             f_k_z,
-            pot_ijk
+            pot_ijk,
         ) = terms.angle_vibration_harmonic(
             q_j_x=vals["q_j_x"],
             q_j_y=vals["q_j_y"],
@@ -269,7 +269,7 @@ def test_angle_vibration_harmonic():
             f_i_x2,
             f_i_y2,
             f_i_z2,
-            pot_kji
+            pot_kji,
         ) = terms.angle_vibration_harmonic(
             q_j_x=vals["q_j_x"],
             q_j_y=vals["q_j_y"],

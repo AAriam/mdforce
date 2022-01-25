@@ -5,6 +5,7 @@ functions in `mdforce.terms_single_simple`.
 
 # 3rd-party packages
 import numpy as np
+
 # Self
 from mdforce import terms_single_simple as terms_simple
 from mdforce import terms_single_array as terms_array
@@ -185,7 +186,7 @@ def test_angle_vibration_harmonic():
             f_k_x,
             f_k_y,
             f_k_z,
-            pot_ijk
+            pot_ijk,
         ) = terms_simple.angle_vibration_harmonic(
             q_j_x=q_j_x,
             q_j_y=q_j_y,

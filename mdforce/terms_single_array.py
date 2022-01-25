@@ -13,6 +13,7 @@ as numpy arrays.
 
 # Standard library
 from typing import Tuple
+
 # 3rd-party
 import numpy as np
 import numpy.linalg as lin

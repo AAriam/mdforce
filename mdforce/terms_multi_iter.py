@@ -8,14 +8,16 @@ potential energy of each particle-pair/triplet.
 
 # Standard library
 from typing import Tuple
+
 # 3rd-party packages
 import numpy as np
+
 # Self
 from . import terms_single_array
 
 
 def coulomb(
-        q: np.ndarray, pairs_idx: np.ndarray, c: np.ndarray, k_e: float
+    q: np.ndarray, pairs_idx: np.ndarray, c: np.ndarray, k_e: float
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate the coulomb potential between a number of particle-pairs, and force on each particle.
@@ -57,7 +59,7 @@ def coulomb(
 
 
 def lennard_jones(
-        q: np.ndarray, pairs_idx: np.ndarray, a: np.ndarray, b: np.ndarray
+    q: np.ndarray, pairs_idx: np.ndarray, a: np.ndarray, b: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate the Lennard-Jones potential between a number of particle-pairs, and force on each
@@ -101,7 +103,7 @@ def lennard_jones(
 
 
 def bond_vibration_harmonic(
-        q: np.ndarray, pairs_idx: np.ndarray, dist_eq: np.ndarray, k_b: np.ndarray
+    q: np.ndarray, pairs_idx: np.ndarray, dist_eq: np.ndarray, k_b: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate the harmonic bond vibration potential between a number of particle-pairs, and force
@@ -147,7 +149,7 @@ def bond_vibration_harmonic(
 
 
 def angle_vibration_harmonic(
-        q: np.ndarray, triplets_idx: np.ndarray, angle_eq: np.ndarray, k_a: np.ndarray
+    q: np.ndarray, triplets_idx: np.ndarray, angle_eq: np.ndarray, k_a: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate the harmonic angle vibration potential between a number of particle-triplets, and

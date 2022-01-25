@@ -13,6 +13,7 @@ array.
 
 # Standard library
 from typing import Tuple
+
 # 3rd-party
 import numpy as np
 import numpy.linalg as lin
@@ -158,7 +159,7 @@ def bond_vibration_harmonic(
     displacements_jsi = dist_jsi - dist_eq_ijs
     k_times_displacements = k_b_ijs * displacements_jsi
     # Calculate potential
-    pot_ijs = (k_times_displacements * displacements_jsi / 2)
+    pot_ijs = k_times_displacements * displacements_jsi / 2
     # Calculate force
     f_ijs = (-k_times_displacements / dist_jsi).reshape(-1, 1) * q_jsi
     f_jsi = -f_ijs

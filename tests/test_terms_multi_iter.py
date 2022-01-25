@@ -5,6 +5,7 @@ functions in `mdforce.terms_single_array`.
 
 # 3rd-party packages
 import numpy as np
+
 # Self
 from mdforce import terms_single_array as terms_single
 from mdforce import terms_multi_iter as terms_iter
@@ -108,12 +109,24 @@ def test_bond_vibration_harmonic():
 
         # Calculate force and potential between each pair in `pairs_idx`, using the already tested
         # function in `terms_single_array`
-        f01, pot01 = terms_single.bond_vibration_harmonic(q_i=q[0], q_j=q[1], dist_eq=dist_eq[0], k_b=k_b[0])
-        f02, pot02 = terms_single.bond_vibration_harmonic(q_i=q[0], q_j=q[2], dist_eq=dist_eq[1], k_b=k_b[1])
-        f03, pot03 = terms_single.bond_vibration_harmonic(q_i=q[0], q_j=q[3], dist_eq=dist_eq[2], k_b=k_b[2])
-        f04, pot04 = terms_single.bond_vibration_harmonic(q_i=q[0], q_j=q[4], dist_eq=dist_eq[3], k_b=k_b[3])
-        f12, pot12 = terms_single.bond_vibration_harmonic(q_i=q[1], q_j=q[2], dist_eq=dist_eq[4], k_b=k_b[4])
-        f13, pot13 = terms_single.bond_vibration_harmonic(q_i=q[1], q_j=q[3], dist_eq=dist_eq[5], k_b=k_b[5])
+        f01, pot01 = terms_single.bond_vibration_harmonic(
+            q_i=q[0], q_j=q[1], dist_eq=dist_eq[0], k_b=k_b[0]
+        )
+        f02, pot02 = terms_single.bond_vibration_harmonic(
+            q_i=q[0], q_j=q[2], dist_eq=dist_eq[1], k_b=k_b[1]
+        )
+        f03, pot03 = terms_single.bond_vibration_harmonic(
+            q_i=q[0], q_j=q[3], dist_eq=dist_eq[2], k_b=k_b[2]
+        )
+        f04, pot04 = terms_single.bond_vibration_harmonic(
+            q_i=q[0], q_j=q[4], dist_eq=dist_eq[3], k_b=k_b[3]
+        )
+        f12, pot12 = terms_single.bond_vibration_harmonic(
+            q_i=q[1], q_j=q[2], dist_eq=dist_eq[4], k_b=k_b[4]
+        )
+        f13, pot13 = terms_single.bond_vibration_harmonic(
+            q_i=q[1], q_j=q[3], dist_eq=dist_eq[5], k_b=k_b[5]
+        )
 
         # Calculate force and potential between each pair in `pairs_idx`, using the equivalent
         # function in `terms_multi_iter`
@@ -150,12 +163,24 @@ def test_angle_vibration_harmonic():
 
         # Calculate force and potential between each triplet in `triplets_idx`, using the already
         # tested function in `terms_single_array`
-        *f012, pot012 = terms_single.angle_vibration_harmonic(q_j=q[0], q_i=q[1], q_k=q[2], angle_eq=angle_eq[0], k_a=k_a[0])
-        *f023, pot023 = terms_single.angle_vibration_harmonic(q_j=q[0], q_i=q[2], q_k=q[3], angle_eq=angle_eq[1], k_a=k_a[1])
-        *f034, pot034 = terms_single.angle_vibration_harmonic(q_j=q[0], q_i=q[3], q_k=q[4], angle_eq=angle_eq[2], k_a=k_a[2])
-        *f042, pot042 = terms_single.angle_vibration_harmonic(q_j=q[0], q_i=q[4], q_k=q[2], angle_eq=angle_eq[3], k_a=k_a[3])
-        *f123, pot123 = terms_single.angle_vibration_harmonic(q_j=q[1], q_i=q[2], q_k=q[3], angle_eq=angle_eq[4], k_a=k_a[4])
-        *f134, pot134 = terms_single.angle_vibration_harmonic(q_j=q[1], q_i=q[3], q_k=q[4], angle_eq=angle_eq[5], k_a=k_a[5])
+        *f012, pot012 = terms_single.angle_vibration_harmonic(
+            q_j=q[0], q_i=q[1], q_k=q[2], angle_eq=angle_eq[0], k_a=k_a[0]
+        )
+        *f023, pot023 = terms_single.angle_vibration_harmonic(
+            q_j=q[0], q_i=q[2], q_k=q[3], angle_eq=angle_eq[1], k_a=k_a[1]
+        )
+        *f034, pot034 = terms_single.angle_vibration_harmonic(
+            q_j=q[0], q_i=q[3], q_k=q[4], angle_eq=angle_eq[2], k_a=k_a[2]
+        )
+        *f042, pot042 = terms_single.angle_vibration_harmonic(
+            q_j=q[0], q_i=q[4], q_k=q[2], angle_eq=angle_eq[3], k_a=k_a[3]
+        )
+        *f123, pot123 = terms_single.angle_vibration_harmonic(
+            q_j=q[1], q_i=q[2], q_k=q[3], angle_eq=angle_eq[4], k_a=k_a[4]
+        )
+        *f134, pot134 = terms_single.angle_vibration_harmonic(
+            q_j=q[1], q_i=q[3], q_k=q[4], angle_eq=angle_eq[5], k_a=k_a[5]
+        )
 
         # Calculate force and potential between each pair in `triplets_idx`, using the equivalent
         # function in `terms_multi_iter`
