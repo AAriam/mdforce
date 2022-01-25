@@ -47,7 +47,7 @@ def coulomb(
     """
     # Initialize arrays to store force and potential
     f = np.zeros(q.shape)
-    pot = np.zeros(pairs_idx.shape)
+    pot = np.zeros(pairs_idx.shape[0])
     # Iterate over all particle-pair indices, and calculate force and potential
     for pair_idx, (i, j) in enumerate(pairs_idx):
         f_ij, pot_ij = terms_single_array.coulomb(q[i], q[j], c[i], c[j], k_e)
@@ -91,7 +91,7 @@ def lennard_jones(
     """
     # Initialize arrays to store force and potential
     f = np.zeros(q.shape)
-    pot = np.zeros(pairs_idx.shape)
+    pot = np.zeros(pairs_idx.shape[0])
     # Iterate over all particle-pair indices, and calculate force and potential
     for pair_idx, (i, j) in enumerate(pairs_idx):
         f_ij, pot_ij = terms_single_array.lennard_jones(q[i], q[j], a[pair_idx], b[pair_idx])
@@ -101,7 +101,7 @@ def lennard_jones(
 
 
 def bond_vibration_harmonic(
-        q: np.ndarray, pairs_idx: np.ndarray, eq_dist: np.ndarray, k_b: np.ndarray
+        q: np.ndarray, pairs_idx: np.ndarray, dist_eq: np.ndarray, k_b: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate the harmonic bond vibration potential between a number of particle-pairs, and force
@@ -115,7 +115,7 @@ def bond_vibration_harmonic(
     pairs_idx : numpy.ndarray
         Indices of all pairs of particles in `q`, between which the interaction should be
         calculated, as a 2D-array of shape (p, 2), where 'p' is the number of interacting pairs.
-    eq_dist : numpy.ndarray
+    dist_eq : numpy.ndarray
         Equilibrium bond length for each particle-pair in `pairs_idx`, as a 1D-array of shape
         (p, ).
     k_b : float
@@ -139,7 +139,7 @@ def bond_vibration_harmonic(
     # Iterate over all particle-pair indices, and calculate force and potential
     for pair_idx, (i, j) in enumerate(pairs_idx):
         f_ij, pot_ij = terms_single_array.bond_vibration_harmonic(
-            q[i], q[j], eq_dist[pair_idx], k_b[pair_idx]
+            q[i], q[j], dist_eq[pair_idx], k_b[pair_idx]
         )
         f[[i, j]] += f_ij, -f_ij
         pot[pair_idx] = pot_ij
@@ -147,7 +147,7 @@ def bond_vibration_harmonic(
 
 
 def angle_vibration_harmonic(
-        q: np.ndarray, triplets_idx: np.ndarray, eq_angle: np.ndarray, k_a: np.ndarray
+        q: np.ndarray, triplets_idx: np.ndarray, angle_eq: np.ndarray, k_a: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate the harmonic angle vibration potential between a number of particle-triplets, and
@@ -162,7 +162,7 @@ def angle_vibration_harmonic(
         Indices of all triplets of particles in `q`, between which the interaction should be
         calculated, as a 2D-array of shape (p, 3), where 'p' is the number of interacting pairs.
         For each triplet, the index of the particle in the middle should be the first index.
-    eq_angle : numpy.ndarray
+    angle_eq : numpy.ndarray
         Equilibrium angle (in radian) for each particle-triplet in `triplets_idx`, as a 1D-array of
         shape (p, ).
     k_a : numpy.ndarray
@@ -186,7 +186,7 @@ def angle_vibration_harmonic(
     # Iterate over all particle-pair indices, and calculate force and potential
     for triplet_idx, (j, i, k) in enumerate(triplets_idx):
         f_j, f_i, f_k, pot_ijk = terms_single_array.angle_vibration_harmonic(
-            q[j], q[i], q[k], eq_angle[triplet_idx], k_a[triplet_idx]
+            q[j], q[i], q[k], angle_eq[triplet_idx], k_a[triplet_idx]
         )
         f[[j, i, k]] += f_j, f_i, f_k
         pot[triplet_idx] = pot_ijk
