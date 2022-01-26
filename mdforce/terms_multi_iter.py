@@ -6,6 +6,7 @@ case of the angle-vibration function) in an iterative way. Moreover, each functi
 potential energy of each particle-pair/triplet.
 """
 
+
 # Standard library
 from typing import Tuple
 
@@ -13,7 +14,7 @@ from typing import Tuple
 import numpy as np
 
 # Self
-from . import terms_single_array
+from . import terms_single_array_simplified as terms_sas
 
 
 def coulomb(
@@ -49,13 +50,13 @@ def coulomb(
     """
     # Initialize arrays to store force and potential
     f = np.zeros(q.shape)
-    pot = np.zeros(pairs_idx.shape[0])
+    e = np.zeros(pairs_idx.shape[0])
     # Iterate over all particle-pair indices, and calculate force and potential
     for pair_idx, (i, j) in enumerate(pairs_idx):
-        f_ij, pot_ij = terms_single_array.coulomb(q[i], q[j], c[i], c[j], k_e)
-        f[[i, j]] += f_ij, -f_ij
-        pot[pair_idx] = pot_ij
-    return f, pot
+        f_i, e_ij = terms_sas.coulomb(q[i], q[j], c[i], c[j], k_e)
+        f[[i, j]] += f_i, -f_i
+        e[pair_idx] = e_ij
+    return f, e
 
 
 def lennard_jones(
@@ -93,17 +94,17 @@ def lennard_jones(
     """
     # Initialize arrays to store force and potential
     f = np.zeros(q.shape)
-    pot = np.zeros(pairs_idx.shape[0])
+    e = np.zeros(pairs_idx.shape[0])
     # Iterate over all particle-pair indices, and calculate force and potential
     for pair_idx, (i, j) in enumerate(pairs_idx):
-        f_ij, pot_ij = terms_single_array.lennard_jones(q[i], q[j], a[pair_idx], b[pair_idx])
-        f[[i, j]] += f_ij, -f_ij
-        pot[pair_idx] = pot_ij
-    return f, pot
+        f_i, e_ij = terms_sas.lennard_jones(q[i], q[j], a[pair_idx], b[pair_idx])
+        f[[i, j]] += f_i, -f_i
+        e[pair_idx] = e_ij
+    return f, e
 
 
 def bond_vibration_harmonic(
-    q: np.ndarray, pairs_idx: np.ndarray, dist_eq: np.ndarray, k_b: np.ndarray
+    q: np.ndarray, pairs_idx: np.ndarray, d0: np.ndarray, k_b: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate the harmonic bond vibration potential between a number of particle-pairs, and force
@@ -117,7 +118,7 @@ def bond_vibration_harmonic(
     pairs_idx : numpy.ndarray
         Indices of all pairs of particles in `q`, between which the interaction should be
         calculated, as a 2D-array of shape (p, 2), where 'p' is the number of interacting pairs.
-    dist_eq : numpy.ndarray
+    d0 : numpy.ndarray
         Equilibrium bond length for each particle-pair in `pairs_idx`, as a 1D-array of shape
         (p, ).
     k_b : float
@@ -137,19 +138,17 @@ def bond_vibration_harmonic(
     """
     # Initialize arrays to store force and potential
     f = np.zeros(q.shape)
-    pot = np.zeros(pairs_idx.shape[0])
+    e = np.zeros(pairs_idx.shape[0])
     # Iterate over all particle-pair indices, and calculate force and potential
     for pair_idx, (i, j) in enumerate(pairs_idx):
-        f_ij, pot_ij = terms_single_array.bond_vibration_harmonic(
-            q[i], q[j], dist_eq[pair_idx], k_b[pair_idx]
-        )
-        f[[i, j]] += f_ij, -f_ij
-        pot[pair_idx] = pot_ij
-    return f, pot
+        f_i, pot_ij = terms_sas.bond_vibration_harmonic(q[i], q[j], d0[pair_idx], k_b[pair_idx])
+        f[[i, j]] += f_i, -f_i
+        e[pair_idx] = pot_ij
+    return f, e
 
 
 def angle_vibration_harmonic(
-    q: np.ndarray, triplets_idx: np.ndarray, angle_eq: np.ndarray, k_a: np.ndarray
+    q: np.ndarray, triplets_idx: np.ndarray, angle0: np.ndarray, k_a: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate the harmonic angle vibration potential between a number of particle-triplets, and
@@ -163,8 +162,8 @@ def angle_vibration_harmonic(
     triplets_idx : numpy.ndarray
         Indices of all triplets of particles in `q`, between which the interaction should be
         calculated, as a 2D-array of shape (p, 3), where 'p' is the number of interacting pairs.
-        For each triplet, the index of the particle in the middle should be the first index.
-    angle_eq : numpy.ndarray
+        For each triplet, the index of the particle in the middle should be in the middle.
+    angle0 : numpy.ndarray
         Equilibrium angle (in radian) for each particle-triplet in `triplets_idx`, as a 1D-array of
         shape (p, ).
     k_a : numpy.ndarray
@@ -184,12 +183,12 @@ def angle_vibration_harmonic(
     """
     # Initialize arrays to store force and potential
     f = np.zeros(q.shape)
-    pot = np.zeros(triplets_idx.shape[0])
+    e = np.zeros(triplets_idx.shape[0])
     # Iterate over all particle-pair indices, and calculate force and potential
-    for triplet_idx, (j, i, k) in enumerate(triplets_idx):
-        f_j, f_i, f_k, pot_ijk = terms_single_array.angle_vibration_harmonic(
-            q[j], q[i], q[k], angle_eq[triplet_idx], k_a[triplet_idx]
+    for triplet_idx, (i, j, k) in enumerate(triplets_idx):
+        f_i, f_j, f_k, e_ijk = terms_sas.angle_vibration_harmonic(
+            q[i], q[j], q[k], angle0[triplet_idx], k_a[triplet_idx]
         )
-        f[[j, i, k]] += f_j, f_i, f_k
-        pot[triplet_idx] = pot_ijk
-    return f, pot
+        f[[i, j, k]] += f_i, f_j, f_k
+        e[triplet_idx] = e_ijk
+    return f, e
