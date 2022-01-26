@@ -5,6 +5,7 @@ functions in `mdforce.terms_single_array`.
 
 # 3rd-party packages
 import numpy as np
+
 # Self
 from mdforce import terms_single_array as terms_single
 from mdforce import terms_multi_iter as terms_iter

@@ -5,6 +5,7 @@ using functions in `mdforce.terms_multi_iter`.
 
 # 3rd-party packages
 import numpy as np
+
 # Self
 from mdforce import terms_multi_iter as terms_iter
 from mdforce import terms_multi_vectorized as terms_vector
@@ -32,7 +33,9 @@ def test_coulomb():
 
         # Calculate force and potential between q[0] and the rest, using the equivalent
         # function in `terms_multi_vectorized`
-        f_i_total_calc, f_jsi_calc, pot_ijs_calc = terms_vector.coulomb(q[0], q[1:], c[0], c[1:], k_e)
+        f_i_total_calc, f_jsi_calc, pot_ijs_calc = terms_vector.coulomb(
+            q[0], q[1:], c[0], c[1:], k_e
+        )
 
         # Test whether both functions' results are the same
         assert np.all(np.isclose(f_i_total_calc, f[0]))
@@ -94,11 +97,15 @@ def test_bond_vibration_harmonic():
 
         # Calculate force and potential between each pair in `pairs_idx`, using the already tested
         # function in `terms_single_array`
-        f, pot = terms_iter.bond_vibration_harmonic(q=q, pairs_idx=pairs_idx, dist_eq=dist_eq, k_b=k_b)
+        f, pot = terms_iter.bond_vibration_harmonic(
+            q=q, pairs_idx=pairs_idx, dist_eq=dist_eq, k_b=k_b
+        )
 
         # Calculate force and potential between q[0] and the rest, using the equivalent
         # function in `terms_multi_vectorized`
-        f_i_total_calc, f_jsi_calc, pot_ijs_calc = terms_vector.bond_vibration_harmonic(q[0], q[1:], dist_eq, k_b)
+        f_i_total_calc, f_jsi_calc, pot_ijs_calc = terms_vector.bond_vibration_harmonic(
+            q[0], q[1:], dist_eq, k_b
+        )
 
         # Test whether both functions' results are the same
         assert np.all(np.isclose(f_i_total_calc, f[0]))

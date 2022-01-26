@@ -94,8 +94,12 @@ def test_model_water_flexible_3site_spc():
 
             # ---------- Test Lennard-Jones ----------
             f_lj = np.zeros(shape_data)
-            f_lj_0, f_lj_36, pot_lj_36_0 = terms_vector.lennard_jones(q[0], q[[3,6]], lj_as[[0,1]], lj_bs[[0,1]])
-            f_lj_3, f_lj_6, pot_lj_6_3 = terms_vector.lennard_jones(q[3], q[[6]], lj_as[[1]], lj_bs[[1]])
+            f_lj_0, f_lj_36, pot_lj_36_0 = terms_vector.lennard_jones(
+                q[0], q[[3, 6]], lj_as[[0, 1]], lj_bs[[0, 1]]
+            )
+            f_lj_3, f_lj_6, pot_lj_6_3 = terms_vector.lennard_jones(
+                q[3], q[[6]], lj_as[[1]], lj_bs[[1]]
+            )
             f_lj[0] = f_lj_0
             f_lj[3] = f_lj_3 + f_lj_36[0]
             f_lj[6] = f_lj_36[1] + f_lj_6
@@ -105,15 +109,19 @@ def test_model_water_flexible_3site_spc():
 
             # ---------- Test bond-vibration ----------
             f_bond = np.zeros(shape_data)
-            f_b_0, f_b_12, pot_b_12_0 = terms_vector.bond_vibration_harmonic(q[0], q[[1,2]], dists_eq, k_bs)
-            f_b_3, f_b_45, pot_b_45_3 = terms_vector.bond_vibration_harmonic(q[3], q[[4, 5]],
-                                                                             dists_eq, k_bs)
-            f_b_6, f_b_78, pot_b_78_6 = terms_vector.bond_vibration_harmonic(q[6], q[[7, 8]],
-                                                                             dists_eq, k_bs)
+            f_b_0, f_b_12, pot_b_12_0 = terms_vector.bond_vibration_harmonic(
+                q[0], q[[1, 2]], dists_eq, k_bs
+            )
+            f_b_3, f_b_45, pot_b_45_3 = terms_vector.bond_vibration_harmonic(
+                q[3], q[[4, 5]], dists_eq, k_bs
+            )
+            f_b_6, f_b_78, pot_b_78_6 = terms_vector.bond_vibration_harmonic(
+                q[6], q[[7, 8]], dists_eq, k_bs
+            )
             f_bond[0] = f_b_0
-            f_bond[[1,2]] = f_b_12
+            f_bond[[1, 2]] = f_b_12
             f_bond[3] = f_b_3
-            f_bond[[4,5]] = f_b_45
+            f_bond[[4, 5]] = f_b_45
             f_bond[6] = f_b_6
             f_bond[[7, 8]] = f_b_78
             pot_bond = pot_b_12_0.sum() + pot_b_45_3.sum() + pot_b_78_6.sum()
@@ -123,11 +131,16 @@ def test_model_water_flexible_3site_spc():
             # Test angle-vibration
             f_angle = np.zeros(shape_data)
             from mdforce.terms_single_array import angle_vibration_harmonic
-            f_angle[0], f_angle[1], f_angle[2], pot_a_12_0 = angle_vibration_harmonic(q[0], q[1], q[2], angle_eq, k_a)
-            f_angle[3], f_angle[4], f_angle[5], pot_a_45_3 = angle_vibration_harmonic(q[3], q[4], q[5], angle_eq,
-                                                                       k_a)
-            f_angle[6], f_angle[7], f_angle[8], pot_a_67_8 = angle_vibration_harmonic(q[6], q[7], q[8], angle_eq,
-                                                                       k_a)
+
+            f_angle[0], f_angle[1], f_angle[2], pot_a_12_0 = angle_vibration_harmonic(
+                q[0], q[1], q[2], angle_eq, k_a
+            )
+            f_angle[3], f_angle[4], f_angle[5], pot_a_45_3 = angle_vibration_harmonic(
+                q[3], q[4], q[5], angle_eq, k_a
+            )
+            f_angle[6], f_angle[7], f_angle[8], pot_a_67_8 = angle_vibration_harmonic(
+                q[6], q[7], q[8], angle_eq, k_a
+            )
             pot_angle = pot_a_12_0 + pot_a_45_3 + pot_a_67_8
             assert np.all(np.isclose(forcefield.force_angle_vibration, f_angle))
             assert np.isclose(forcefield.energy_angle_vibration, pot_angle)
