@@ -6,12 +6,14 @@ Each function calculates the force on a single target particle `i`, due to anoth
 on each of them). Moreover, each function also returns the potential energy of the system of
 particles.
 
-These functions are mostly intended for testing purposes; they are written in the most simple way
-with the absolute minimal use of any other packages or modules, and their arguments are all numbers
-, i.e. even the position vectors should each be inputted as three separate values corresponding to
-the coordinates of the particle in x-, y- and z-directions.
+These functions are mostly intended for testing purposes; they are written in the most primitive
+way, with the absolute minimal use of any other packages or modules, and their arguments are all
+numbers, i.e. even the position vectors should each be inputted as three separate values
+corresponding to the coordinates of the particle in x-, y- and z-directions.
 """
 
+
+# Standard library
 from typing import Tuple
 import math  # Used only in `angle_vibration_harmonic` to calculate arccosine and sine.
 
@@ -29,15 +31,6 @@ def coulomb(
 ) -> Tuple[float, float, float, float]:
     """
     Calculate the coulomb potential between two particles 'i' and 'j', and force on 'i' due to 'j'.
-
-    The formula for coulomb potential 'V_e' as a function of particles' position vectors 'q_i' and
-    'q_j', with charges 'c_i' and 'c_j' is:
-    V_e(q_i, q_j) = k_e * c_i * c_j / ||q_ji||
-    where q_ji is the distance vector q_i - q_j = (q_ji_x, q_ji_y, q_ji_z)
-    and the norm ||q_ji|| = sqrt(q_ji_x^2 + q_ji_y^2 + q_ji_z^2)
-
-    Consequently, the force vector 'F_e' on particle 'i' due to particle 'j' is:
-    F_e(i, j) = k_e * c_i * c_j * (q_ji) / ||q_ji||^3
 
     Parameters
     ----------
@@ -68,24 +61,23 @@ def coulomb(
 
     Notes
     -----
-    The force vector for particle 'j' due to particle 'i' should be the same vector as the return
-    value, only with opposite signs for all three components, whereas the potential should not
-    change.
+    The force vector for particle 'j' due to particle 'i' is the same vector as the return value,
+    only with opposite signs for all components, whereas the potential energy does not change.
     """
     # Calculate distance vector
     q_ji_x = q_i_x - q_j_x
     q_ji_y = q_i_y - q_j_y
     q_ji_z = q_i_z - q_j_z
-    # Calculate the norm of vector
-    dist_ji = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
+    # Calculate the norm of vector (i.e. distance)
+    d_ij = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
     # Calculate potential
-    pot_ij = k_e * c_i * c_j / dist_ji
+    e_ij = k_e * c_i * c_j / d_ij
     # Calculate the components of the force vector
-    common = k_e * c_i * c_j / dist_ji ** 3
+    common = k_e * c_i * c_j / d_ij ** 3
     f_i_x = common * q_ji_x
     f_i_y = common * q_ji_y
     f_i_z = common * q_ji_z
-    return f_i_x, f_i_y, f_i_z, pot_ij
+    return f_i_x, f_i_y, f_i_z, e_ij
 
 
 def lennard_jones(
@@ -129,25 +121,24 @@ def lennard_jones(
 
     Notes
     -----
-    The force vector for particle 'j' due to particle 'i' should be the same vector as the return
-    value, only with opposite signs for all three components, whereas the potential should not
-    change.
+    The force vector for particle 'j' due to particle 'i' is the same vector as the return value,
+    only with opposite signs for all components, whereas the potential energy does not change.
     """
     # Calculate distance vector
     q_ji_x = q_i_x - q_j_x
     q_ji_y = q_i_y - q_j_y
     q_ji_z = q_i_z - q_j_z
-    # Calculate the norm of vector
-    dist_ji = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
+    # Calculate the norm of vector (i.e. distance)
+    d_ij = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
     # Calculate potential
-    pot_ij = (a_ij / dist_ji ** 12) - (b_ij / dist_ji ** 6)
+    e_ij = (a_ij / d_ij ** 12) - (b_ij / d_ij ** 6)
     # Calculate the components of the force vector
-    repulsive_common = 12 * a_ij / dist_ji ** 14
-    attractive_common = 6 * b_ij / dist_ji ** 8
-    f_i_x = (repulsive_common * q_ji_x) - (attractive_common * q_ji_x)
-    f_i_y = (repulsive_common * q_ji_y) - (attractive_common * q_ji_y)
-    f_i_z = (repulsive_common * q_ji_z) - (attractive_common * q_ji_z)
-    return f_i_x, f_i_y, f_i_z, pot_ij
+    f_repulsive_common = 12 * a_ij / d_ij ** 14
+    f_attractive_common = 6 * b_ij / d_ij ** 8
+    f_i_x = (f_repulsive_common * q_ji_x) - (f_attractive_common * q_ji_x)
+    f_i_y = (f_repulsive_common * q_ji_y) - (f_attractive_common * q_ji_y)
+    f_i_z = (f_repulsive_common * q_ji_z) - (f_attractive_common * q_ji_z)
+    return f_i_x, f_i_y, f_i_z, e_ij
 
 
 def bond_vibration_harmonic(
@@ -157,7 +148,7 @@ def bond_vibration_harmonic(
     q_j_x: float,
     q_j_y: float,
     q_j_z: float,
-    dist_eq: float,
+    d0: float,
     k_b: float,
 ) -> Tuple[float, float, float, float]:
     """
@@ -178,7 +169,7 @@ def bond_vibration_harmonic(
         Coordinate of particle 'j' in y-direction.
     q_j_z : float
         Coordinate of particle 'j' in z-direction.
-    dist_eq : float
+    d0 : float
         Equilibrium bond length.
     k_b : float
         Force constant of the harmonic bond potential.
@@ -191,37 +182,36 @@ def bond_vibration_harmonic(
 
     Notes
     -----
-    The force vector for particle 'j' due to particle 'i' should be the same vector as the return
-    value, only with opposite signs for all three components, whereas the potential should not
-    change.
+    The force vector for particle 'j' due to particle 'i' is the same vector as the return value,
+    only with opposite signs for all components, whereas the potential energy does not change.
     """
     # Calculate distance vector
     q_ji_x = q_i_x - q_j_x
     q_ji_y = q_i_y - q_j_y
     q_ji_z = q_i_z - q_j_z
-    # Calculate the norm of vector
-    dist_ji = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
+    # Calculate the norm of vector (i.e. distance)
+    d_ij = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
     # Calculate potential
-    pot_ij = 0.5 * k_b * (dist_ji - dist_eq) ** 2
+    e_ij = 0.5 * k_b * (d_ij - d0) ** 2
     # Calculate the components of the force vector
-    common = -k_b * (dist_ji - dist_eq) / dist_ji
+    common = -k_b * (d_ij - d0) / d_ij
     f_i_x = common * q_ji_x
     f_i_y = common * q_ji_y
     f_i_z = common * q_ji_z
-    return f_i_x, f_i_y, f_i_z, pot_ij
+    return f_i_x, f_i_y, f_i_z, e_ij
 
 
 def angle_vibration_harmonic(
-    q_j_x: float,
-    q_j_y: float,
-    q_j_z: float,
     q_i_x: float,
     q_i_y: float,
     q_i_z: float,
+    q_j_x: float,
+    q_j_y: float,
+    q_j_z: float,
     q_k_x: float,
     q_k_y: float,
     q_k_z: float,
-    angle_eq: float,
+    angle0: float,
     k_a: float,
 ) -> Tuple[float, float, float, float, float, float, float, float, float, float]:
     """
@@ -248,7 +238,7 @@ def angle_vibration_harmonic(
         Coordinate of particle 'k' in y-direction.
     q_k_z : float
         Coordinate of particle 'k' in z-direction.
-    angle_eq : float
+    angle0 : float
         Equilibrium angle in radian.
     k_a : float
         Force constant of the harmonic angle potential.
@@ -268,47 +258,39 @@ def angle_vibration_harmonic(
     q_jk_x = q_k_x - q_j_x
     q_jk_y = q_k_y - q_j_y
     q_jk_z = q_k_z - q_j_z
-    # Calculate the norm of vectors
-    dist_ji = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
-    dist_jk = (q_jk_x ** 2 + q_jk_y ** 2 + q_jk_z ** 2) ** 0.5
+    # Calculate the norm of vectors (i.e. distances)
+    d_ij = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
+    d_jk = (q_jk_x ** 2 + q_jk_y ** 2 + q_jk_z ** 2) ** 0.5
     # Calculate cosine of angle using the dot product formula
-    cos = ((q_ji_x * q_jk_x) + (q_ji_y * q_jk_y) + (q_ji_z * q_jk_z)) / (dist_ji * dist_jk)
+    cos = ((q_ji_x * q_jk_x) + (q_ji_y * q_jk_y) + (q_ji_z * q_jk_z)) / (d_ij * d_jk)
     # Raise error if cosine is not withing the range (-1, 1)
     if not (-1 < cos < 1):
         raise ValueError(f"Calculated cosine {cos} does not lie within the range (-1, 1).")
     # Calculate angle from cosine
     angle = math.acos(cos)
-    # Calculate sine of angle
-    sin = math.sin(angle)
-
     # Calculate potential
-    pot_ijk = 0.5 * k_a * (angle - angle_eq) ** 2
-
+    e_ijk = 0.5 * k_a * (angle - angle0) ** 2
     # Calculate common term
-    common = k_a * (angle - angle_eq) / abs(sin)
-
+    common = k_a * (angle - angle0) / abs(math.sin(angle))
     # Calculate the components of the force vector for 'i'
-    f_i_x = common * (q_jk_x / (dist_ji * dist_jk) - cos * q_ji_x / dist_ji ** 2)
-    f_i_y = common * (q_jk_y / (dist_ji * dist_jk) - cos * q_ji_y / dist_ji ** 2)
-    f_i_z = common * (q_jk_z / (dist_ji * dist_jk) - cos * q_ji_z / dist_ji ** 2)
+    f_i_x = common * (q_jk_x / (d_ij * d_jk) - cos * q_ji_x / d_ij ** 2)
+    f_i_y = common * (q_jk_y / (d_ij * d_jk) - cos * q_ji_y / d_ij ** 2)
+    f_i_z = common * (q_jk_z / (d_ij * d_jk) - cos * q_ji_z / d_ij ** 2)
     # Calculate the components of the force vector for 'k'
-    f_k_x = common * (q_ji_x / (dist_ji * dist_jk) - cos * q_jk_x / dist_jk ** 2)
-    f_k_y = common * (q_ji_y / (dist_ji * dist_jk) - cos * q_jk_y / dist_jk ** 2)
-    f_k_z = common * (q_ji_z / (dist_ji * dist_jk) - cos * q_jk_z / dist_jk ** 2)
+    f_k_x = common * (q_ji_x / (d_ij * d_jk) - cos * q_jk_x / d_jk ** 2)
+    f_k_y = common * (q_ji_y / (d_ij * d_jk) - cos * q_jk_y / d_jk ** 2)
+    f_k_z = common * (q_ji_z / (d_ij * d_jk) - cos * q_jk_z / d_jk ** 2)
     # Calculate the components of the force vector for 'j'
     f_j_x = common * (
-        (-q_ji_x - q_jk_x) / (dist_ji * dist_jk)
-        - cos * (-q_ji_x / dist_ji ** 2 - q_jk_x / dist_jk ** 2)
+        (-q_ji_x - q_jk_x) / (d_ij * d_jk) - cos * (-q_ji_x / d_ij ** 2 - q_jk_x / d_jk ** 2)
     )
     f_j_y = common * (
-        (-q_ji_y - q_jk_y) / (dist_ji * dist_jk)
-        - cos * (-q_ji_y / dist_ji ** 2 - q_jk_y / dist_jk ** 2)
+        (-q_ji_y - q_jk_y) / (d_ij * d_jk) - cos * (-q_ji_y / d_ij ** 2 - q_jk_y / d_jk ** 2)
     )
     f_j_z = common * (
-        (-q_ji_z - q_jk_z) / (dist_ji * dist_jk)
-        - cos * (-q_ji_z / dist_ji ** 2 - q_jk_z / dist_jk ** 2)
+        (-q_ji_z - q_jk_z) / (d_ij * d_jk) - cos * (-q_ji_z / d_ij ** 2 - q_jk_z / d_jk ** 2)
     )
-    return f_j_x, f_j_y, f_j_z, f_i_x, f_i_y, f_i_z, f_k_x, f_k_y, f_k_z, pot_ijk
+    return f_i_x, f_i_y, f_i_z, f_j_x, f_j_y, f_j_z, f_k_x, f_k_y, f_k_z, e_ijk
 
 
 def dihedral():
