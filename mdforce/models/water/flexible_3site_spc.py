@@ -213,7 +213,7 @@ class Flexible3SiteSPC(ForceField):
         super().__init__()
 
         # Verify that arguments are either all numbers, or all strings/duq.Quantity
-        args = list(locals().values())[1:]
+        args = list(locals().values())[1:-1]
         count_nums = 0
         for arg in args:
             if isinstance(arg, (int, float, np.number)):
@@ -446,11 +446,9 @@ class Flexible3SiteSPC(ForceField):
         # Reset attributes that store the calculated values
         self._force_coulomb[...] = 0
         self._energy_coulomb = 0
-
         # Iterate over the indices of all atoms, other than the last three ones
         for idx_curr_atom in range(self._num_atoms - 3):
             idx_first_interacting_atom = idx_curr_atom + 3 - idx_curr_atom % 3
-
             # Retrieve the distance-vectors/distances between current atom and all
             # atoms after it, as two arrays
             dists = self._distances[idx_curr_atom, idx_first_interacting_atom:]
@@ -558,8 +556,8 @@ class Flexible3SiteSPC(ForceField):
 
             # Calculate forces on each atom
             f = (-k_times_displacements / dists).reshape(-1, 1) * dist_vectors
-            self._force_coulomb[idx_curr_atom] = f.sum(axis=0)
-            self._force_coulomb[idx_curr_atom + 1 : idx_curr_atom + 3] = -f
+            self._force_bond[idx_curr_atom] = f.sum(axis=0)
+            self._force_bond[idx_curr_atom + 1 : idx_curr_atom + 3] = -f
         return
 
     def _update_angle_vibration(self) -> None:
@@ -610,7 +608,7 @@ class Flexible3SiteSPC(ForceField):
             r_mr_div_dist2_mr = r_mr / dist_mr ** 2
 
             # Calculate the potential of the whole molecule
-            self._energy_angle += self.__k_a * angle_displacement ** 2
+            self._energy_angle += 0.5 * self.__k_a * angle_displacement ** 2
 
             # Calculate the force on oxygen
             b1 = -(r_ml + r_mr) / dist_ml_mult_dist_mr
