@@ -11,12 +11,12 @@ Moreover, each function also returns the potential energy of each particle-pair/
 array.
 """
 
+
 # Standard library
 from typing import Tuple
 
 # 3rd-party
 import numpy as np
-import numpy.linalg as lin
 
 
 def coulomb(
@@ -45,24 +45,23 @@ def coulomb(
 
     Returns
     -------
-    f_i_total, f_jsi, pot_ijs : Tuple[numpy.ndarray, numpy.ndarray, float]
+    f_i_total, f_jsi, e_ijs : Tuple[numpy.ndarray, numpy.ndarray, float]
         f_i_total: Total force-vector on particle 'i' due to all particles 'js', as a 1D-array with
         same shape as `q_i`.
         f_jsi: Force-vector on each particle in 'js' due to 'i', as a 2D-array with same shape as
         `q_js`.
-        pot_ijs: Potential energy between 'i' and each particle in 'js', as a 1D-array of shape
+        e_ijs: Potential energy between 'i' and each particle in 'js', as a 1D-array of shape
         (n, ).
     """
-    # Calculate common terms
+    # Calculate distance vectors
     q_jsi = q_i - q_js
-    dist_jsi = lin.norm(q_jsi, axis=1)
-    # Calculate potential
-    pot_ijs = k_e * c_i * c_js / dist_jsi
-    # Calculate force
-    f_ijs = (pot_ijs / dist_jsi ** 2).reshape(-1, 1) * q_jsi
-    f_jsi = -f_ijs
-    f_i_total = f_ijs.sum(axis=0)
-    return f_i_total, f_jsi, pot_ijs
+    # Calculate the norm of vectors (i.e. distances)
+    d_ijs = np.linalg.norm(q_jsi, axis=1)
+    # Calculate potentials
+    e_ijs = k_e * c_i * c_js / d_ijs
+    # Calculate forces
+    f_ijs = (e_ijs / d_ijs ** 2).reshape(-1, 1) * q_jsi
+    return f_ijs.sum(axis=0), -f_ijs, e_ijs
 
 
 def lennard_jones(
@@ -92,34 +91,32 @@ def lennard_jones(
 
     Returns
     -------
-    f_i_total, f_jsi, pot_ijs : Tuple[numpy.ndarray, numpy.ndarray, float]
+    f_i_total, f_jsi, e_ijs : Tuple[numpy.ndarray, numpy.ndarray, float]
         f_i_total: Total force-vector on particle 'i' due to all particles 'js', as a 1D-array with
         same shape as `q_i`.
         f_jsi: Force-vector on each particle in 'js' due to 'i', as a 2D-array with same shape as
         `q_js`.
-        pot_ijs: Potential energy between 'i' and each particle in 'js', as a 1D-array of shape
+        e_ijs: Potential energy between 'i' and each particle in 'js', as a 1D-array of shape
         (n, ).
     """
-    # Calculate common terms
+    # Calculate distance vectors
     q_jsi = q_i - q_js
-    dist_jsi = lin.norm(q_jsi, axis=1)
-    inverse_dist_2 = 1 / dist_jsi ** 2
-    inverse_dist_6 = inverse_dist_2 ** 3
-    # Calculate potential
-    pot_ijs_attractive = -b_ijs * inverse_dist_6
-    pot_ijs_repulsive = a_ijs * inverse_dist_6 ** 2
-    pot_ijs = pot_ijs_repulsive + pot_ijs_attractive
-    # Calculate force
-    f_ijs_attractive = 6 * pot_ijs_attractive
-    f_ijs_repulsive = 12 * pot_ijs_repulsive
-    f_ijs = ((f_ijs_attractive + f_ijs_repulsive) * inverse_dist_2).reshape(-1, 1) * q_jsi
-    f_jsi = -f_ijs
-    f_i_total = f_ijs.sum(axis=0)
-    return f_i_total, f_jsi, pot_ijs
+    # Calculate the norm of vectors (i.e. distances)
+    d_ijs = np.linalg.norm(q_jsi, axis=1)
+    # Calculate common terms
+    inv_d_2 = 1 / d_ijs ** 2
+    inv_d_6 = inv_d_2 ** 3
+    # Calculate potentials
+    e_ijs_repulsive = a_ijs * inv_d_6 ** 2
+    e_ijs_attractive = -b_ijs * inv_d_6
+    e_ijs = e_ijs_repulsive + e_ijs_attractive
+    # Calculate forces
+    f_ijs = (6 * (e_ijs + e_ijs_repulsive) * inv_d_2).reshape(-1, 1) * q_jsi
+    return f_ijs.sum(axis=0), -f_ijs, e_ijs
 
 
 def bond_vibration_harmonic(
-    q_i: np.ndarray, q_js: np.ndarray, dist_eq_ijs: np.ndarray, k_b_ijs: np.ndarray
+    q_i: np.ndarray, q_js: np.ndarray, d0_ijs: np.ndarray, k_b_ijs: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, float]:
     """
     Calculate the harmonic bond-vibration potential between a number of particle-pairs, and the
@@ -134,7 +131,7 @@ def bond_vibration_harmonic(
     q_js : numpy.ndarray
         Coordinates vectors of all interacting particles 'js' as a 2D-array of shape (n, m), where
         'n' is the number of particles, and 'm' is the number of spatial dimensions.
-    dist_eq_ijs : numpy.ndarray
+    d0_ijs : numpy.ndarray
         Equilibrium bond length between 'i' and each interacting particle in `js`, as a 1D-array of
         shape (n, ). The value at each index corresponds to the equilibrium bond length between 'i'
         and the particle at the same index in `q_js`.
@@ -153,21 +150,27 @@ def bond_vibration_harmonic(
         pot_ijs: Potential energy between 'i' and each particle in 'js', as a 1D-array of shape
         (n, ).
     """
-    # Calculate common terms
+    # Calculate distance vectors
     q_jsi = q_i - q_js
-    dist_jsi = lin.norm(q_jsi, axis=1)
-    displacements_jsi = dist_jsi - dist_eq_ijs
-    k_times_displacements = k_b_ijs * displacements_jsi
-    # Calculate potential
-    pot_ijs = k_times_displacements * displacements_jsi / 2
-    # Calculate force
-    f_ijs = (-k_times_displacements / dist_jsi).reshape(-1, 1) * q_jsi
-    f_jsi = -f_ijs
-    f_i_total = f_ijs.sum(axis=0)
-    return f_i_total, f_jsi, pot_ijs
+    # Calculate the norm of vectors (i.e. distances)
+    d_ijs = np.linalg.norm(q_jsi, axis=1)
+    # Calculate common terms
+    delta_d_ijs = d_ijs - d0_ijs
+    k__delta_d_ijs = k_b_ijs * delta_d_ijs
+    # Calculate potentials
+    pot_ijs = k__delta_d_ijs * delta_d_ijs / 2
+    # Calculate forces
+    f_ijs = (-k__delta_d_ijs / d_ijs).reshape(-1, 1) * q_jsi
+    return f_ijs.sum(axis=0), -f_ijs, pot_ijs
 
 
-def angle_vibration_harmonic():
+def angle_vibration_harmonic(
+    q_is: np.ndarray,
+    q_j: np.ndarray,
+    q_ks: np.ndarray,
+    angle0_isjks: np.ndarray,
+    k_a_isjks: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
     # TODO
     pass
 
