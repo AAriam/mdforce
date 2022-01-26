@@ -442,7 +442,6 @@ class Flexible3SiteSPC(ForceField):
             due to the Coulomb potential.
             `self._energy_coulomb`: stores the total Coulomb potential of the system.
         """
-
         # Reset attributes that store the calculated values
         self._force_coulomb[...] = 0
         self._energy_coulomb = 0
@@ -451,22 +450,20 @@ class Flexible3SiteSPC(ForceField):
             idx_first_interacting_atom = idx_curr_atom + 3 - idx_curr_atom % 3
             # Retrieve the distance-vectors/distances between current atom and all
             # atoms after it, as two arrays
-            dists = self._distances[idx_curr_atom, idx_first_interacting_atom:]
-            dist_vectors = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom:]
-
+            q_jsi = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom:]
+            d_ijs = self._distances[idx_curr_atom, idx_first_interacting_atom:]
             # Calculate the potential between current atom and all atoms after it
             energy = (
                 self.__k_e
                 * self._charges[idx_curr_atom]
                 * self._charges[idx_first_interacting_atom:]
-                / dists
+                / d_ijs
             )
             self._energy_coulomb += energy.sum()
-
             # Calculate the force on all atoms, using the calculated potential
-            f = (energy / dists ** 2).reshape(-1, 1) * dist_vectors
-            self._force_coulomb[idx_curr_atom] += f.sum(axis=0)
-            self._force_coulomb[idx_first_interacting_atom:] += -f
+            f_ijs = (energy / d_ijs ** 2).reshape(-1, 1) * q_jsi
+            self._force_coulomb[idx_curr_atom] += f_ijs.sum(axis=0)
+            self._force_coulomb[idx_first_interacting_atom:] += -f_ijs
         return
 
     def _update_lennard_jones(self) -> None:
@@ -483,36 +480,29 @@ class Flexible3SiteSPC(ForceField):
             `self._force_lj`: stores the force vectors for each atom, due to the LJ-potential.
             `self._energy_lj`: stores the total LJ-potential of the system.
         """
-
         # Reset attributes that store the calculated values
         self._force_lj[...] = 0
         self._energy_lj = 0
-
         # Iterate over the indices of all oxygen atoms, other than the last one
         for idx_curr_atom in range(0, self._num_atoms - 3, 3):
-
             # Calculate index of first interacting atom, i.e. the next oxygen
             idx_first_interacting_atom = idx_curr_atom + 3
             # Retrieve the distance-vectors/distances between current oxygen and all oxygen
             # atoms after it, as two arrays
-            dists = self._distances[idx_curr_atom, idx_first_interacting_atom::3]
-            dist_vectors = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom::3]
-
+            q_jsi = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom::3]
+            d_ijs = self._distances[idx_curr_atom, idx_first_interacting_atom::3]
             # Calculate common terms only once
-            inverse_dist_2 = 1 / dists ** 2
-            inverse_dist_6 = inverse_dist_2 ** 3
-
+            inv_d2 = 1 / d_ijs ** 2
+            inv_d6 = inv_d2 ** 3
             # Calculate the potential between current oxygen and all oxygen atoms after it
-            e_attractive = -self.__lj_b * inverse_dist_6
-            e_repulsive = self.__lj_a * inverse_dist_6 ** 2
-            self._energy_lj += (e_repulsive + e_attractive).sum()
-
+            e_ijs_repulsive = self.__lj_a * inv_d6 ** 2
+            e_ijs_attractive = -self.__lj_b * inv_d6
+            e_ijs = e_ijs_repulsive + e_ijs_attractive
+            self._energy_lj += e_ijs.sum()
             # Calculate the force on all oxygen atoms, using the calculated potential
-            f_attractive = 6 * e_attractive
-            f_repulsive = 12 * e_repulsive
-            f = ((f_attractive + f_repulsive) * inverse_dist_2).reshape(-1, 1) * dist_vectors
-            self._force_lj[idx_curr_atom] += f.sum(axis=0)
-            self._force_lj[idx_first_interacting_atom::3] += -f
+            f_ijs = (6 * (e_ijs + e_ijs_repulsive) * inv_d2).reshape(-1, 1) * q_jsi
+            self._force_lj[idx_curr_atom] += f_ijs.sum(axis=0)
+            self._force_lj[idx_first_interacting_atom::3] += -f_ijs
         return
 
     def _update_bond_vibration(self) -> None:
@@ -530,34 +520,28 @@ class Flexible3SiteSPC(ForceField):
             `self._force_bond`: stores the force vectors for each atom, due to bond vibration
             `self._energy_bond`: stores the total potential of the system due to bond vibration.
         """
-
         # Reset attributes that store the calculated values
         # In this case, there is no need to reset the array `self._force_bond`
         # since each array element is only written once, so it can be simply overwritten.
         self._energy_bond = 0
-
         # Iterate over the indices of all oxygen atoms
         for idx_curr_atom in range(0, self._num_atoms, 3):
-
             # Retrieve the distance-vectors/distances between the oxygen and the two hydrogen
             # atoms in the same molecule (these are the next two atoms after each oxygen)
             # as two single arrays
-            dist_vectors = self._distance_vectors[
+            q_jsi = self._distance_vectors[
                 idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3
             ]
-            dists = self._distances[idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3]
-
+            d_ijs = self._distances[idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3]
             # Calculate common terms only once
-            displacements = dists - self.__eq_dist
-            k_times_displacements = self.__k_b * displacements
-
+            delta_d_ijs = d_ijs - self.__eq_dist
+            k__delta_d_ijs = self.__k_b * delta_d_ijs
             # Calculate the potential of the whole molecule
-            self._energy_bond += (k_times_displacements * displacements / 2).sum()
-
+            self._energy_bond += (k__delta_d_ijs * delta_d_ijs / 2).sum()
             # Calculate forces on each atom
-            f = (-k_times_displacements / dists).reshape(-1, 1) * dist_vectors
-            self._force_bond[idx_curr_atom] = f.sum(axis=0)
-            self._force_bond[idx_curr_atom + 1 : idx_curr_atom + 3] = -f
+            f_ijs = (-k__delta_d_ijs / d_ijs).reshape(-1, 1) * q_jsi
+            self._force_bond[idx_curr_atom] = f_ijs.sum(axis=0)
+            self._force_bond[idx_curr_atom + 1 : idx_curr_atom + 3] = -f_ijs
         return
 
     def _update_angle_vibration(self) -> None:
@@ -576,54 +560,39 @@ class Flexible3SiteSPC(ForceField):
             `self._energy_angle`: stores the total potential of the system due to angle vibration.
             `self._angles`: stores the calculated angle for each molecule.
         """
-
         # Reset attributes that store the calculated values
         # In this case, there is no need to reset `self._angles` and `self._force_angle` arrays
         # since each array element is only written once, so it can be simply overwritten.
         self._energy_angle = 0
-
         # Iterate over the indices of all oxygen atoms
         for idx_curr_atom in range(0, self._num_atoms, 3):
-
             # Retrieve the distance-vectors/distances between the oxygen, and the two hydrogen
             # atoms in the same molecule (these are the next two atoms after each oxygen)
             # as two separate arrays/two separate values.
-            r_ml = -self._distance_vectors[idx_curr_atom, idx_curr_atom + 1]
-            r_mr = -self._distance_vectors[idx_curr_atom, idx_curr_atom + 2]
-            dist_ml = self._distances[idx_curr_atom, idx_curr_atom + 1]
-            dist_mr = self._distances[idx_curr_atom, idx_curr_atom + 2]
-
+            q_ji = -self._distance_vectors[idx_curr_atom, idx_curr_atom + 1]
+            q_jk = -self._distance_vectors[idx_curr_atom, idx_curr_atom + 2]
+            d_ij = self._distances[idx_curr_atom, idx_curr_atom + 1]
+            d_jk = self._distances[idx_curr_atom, idx_curr_atom + 2]
+            # Calculate common term
+            d_ij__d_jk = d_ij * d_jk
             # Calculate the angle from the dot product formula
-            cos = np.dot(r_ml, r_mr) / (dist_ml * dist_mr)
+            cos = np.dot(q_ji, q_jk) / d_ij__d_jk
             angle = np.arccos(cos)
             # Store the angle
             self._angles[idx_curr_atom // 3] = angle
-
-            # Calculate common terms only once
-            sin = np.sin(angle)
-            angle_displacement = angle - self.__eq_angle
-            a = self.__k_a * angle_displacement / sin
-            dist_ml_mult_dist_mr = dist_ml * dist_mr
-            r_ml_div_dist2_ml = r_ml / dist_ml ** 2
-            r_mr_div_dist2_mr = r_mr / dist_mr ** 2
-
-            # Calculate the potential of the whole molecule
-            self._energy_angle += 0.5 * self.__k_a * angle_displacement ** 2
-
+            # Calculate common terms
+            delta_angle = angle - self.__eq_angle
+            a = self.__k_a * delta_angle / abs(np.sin(angle))
+            # Calculate the potential
+            self._energy_angle += 0.5 * self.__k_a * delta_angle ** 2
+            # Calculate force on first hydrogen
+            f_i = a * (q_jk / d_ij__d_jk - cos * q_ji / d_ij ** 2)
+            self._force_angle[idx_curr_atom + 1] = f_i
+            # Calculate force on second hydrogen
+            f_k = a * (q_ji / d_ij__d_jk - cos * q_jk / d_jk ** 2)
+            self._force_angle[idx_curr_atom + 2] = f_k
             # Calculate the force on oxygen
-            b1 = -(r_ml + r_mr) / dist_ml_mult_dist_mr
-            c1 = cos * (r_ml_div_dist2_ml + r_mr_div_dist2_mr)
-            self._force_angle[idx_curr_atom] = a * (b1 + c1)
-
-            # Calculate the force on first hydrogen
-            b2 = r_mr / dist_ml_mult_dist_mr
-            c2 = cos * r_ml_div_dist2_ml
-            self._force_angle[idx_curr_atom + 1] = a * (b2 - c2)
-
-            # Calculate the force on second hydrogen
-            b3 = r_ml / dist_ml_mult_dist_mr
-            c3 = cos * r_mr_div_dist2_mr
-            self._force_angle[idx_curr_atom + 2] = a * (b3 - c3)
+            self._force_angle[idx_curr_atom] = -(f_i + f_k)
         return
 
     def _update_distances(self, positions) -> None:
@@ -647,7 +616,6 @@ class Flexible3SiteSPC(ForceField):
         `-self._distances[j, i]` should be called, respectively (notice the negative sign in the
         beginning).
         """
-
         # Iterate over all atoms (other than the last atom)
         for idx_atom, coord_atom in enumerate(positions[:-1]):
             # Calculate distance vectors between that atom and all other atoms after it
@@ -665,7 +633,6 @@ class Flexible3SiteSPC(ForceField):
         and all model-parameters in their given units, and (when the model has already been fitted
         to input data) the fitted units.
         """
-
         str_repr = (
             (
                 f"Model Metadata:\n--------------\n{self.model_metadata}\n\n"
