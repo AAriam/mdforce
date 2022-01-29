@@ -53,12 +53,10 @@ class ForceField:
     _dim_charge = duq.Dimension("electric charge")
     _dim_coulomb_k = duq.Dimension("energy.length.electric charge^-2")
     _dim_mass = duq.Dimension("mass")
-
     # Internal units of class data
     _unit_mass = duq.Unit("Da")
     _unit_charge = duq.Unit("e")
     _unit_angle = duq.Unit("rad")
-
     # Pandas Dataframe containing several sets of parameters for the model.
     _dataframe = None
 
@@ -73,7 +71,10 @@ class ForceField:
         """
         for name in cls._dataframe.index[1:]:
             model = cls.from_model(name)
-            print(model.model_metadata + "\n\n" + str(model) + "\n")
+            print(model.model_metadata)
+            print("Parameters:")
+            print("----------")
+            print(model.model_parameters)
         return
 
     @classmethod
@@ -96,7 +97,6 @@ class ForceField:
         pass
 
     def __init__(self):
-
         # Attributes for storing the data after each force-field update
         self._acceleration = None
         self._force_total = None
@@ -111,11 +111,9 @@ class ForceField:
         self._energy_lj = 0
         self._energy_bond = 0
         self._energy_angle = 0
-
         # Attributes that are set after calling `initialize_forcefield`
         self._num_molecules = None
         self._num_atoms = None
-
         # Attributes that are only set when instantiating from alternative constructor `from_model`
         self._model_name = None
         self._model_description = None
@@ -230,11 +228,33 @@ class ForceField:
             Arrays for storing the force-field evaluation results are initialized with the
             correct shape.
         """
-
         # Calculate number of atoms and molecules
         self._num_atoms = shape_data[0]
         self._num_molecules = self._num_atoms // 3
+        self._initialize_output_arrays(shape_data)
+        # Do other preparations specific to the force-field
+        return
 
+    def _initialize_output_arrays(self, shape_data) -> None:
+        """
+        Prepare the force-field for a specific shape of input coordinates. This is necessary to
+        determine the shape of arrays that are used to store the output data after each force
+        evaluation, since these arrays are only created once and then overwritten after each
+        re-evaluation.
+
+        Parameters
+        ----------
+        shape_data : Tuple(int, int)
+            Shape of the array of positions, where the first value is the number of atoms (should
+            be a multiple of 3), and the second value is the number of spatial dimensions of the
+            coordinates of each atom.
+
+        Returns
+        -------
+            None
+            Arrays for storing the force-field evaluation results are initialized with the
+            correct shape.
+        """
         # Initialize output arrays with the right shape
         self._acceleration = np.zeros(shape_data)
         self._force_total = np.zeros(shape_data)
@@ -274,7 +294,6 @@ class ForceField:
             helpers.raise_for_dimension(lj_a, self._dim_lj_a, "lj_a")
         if isinstance(lj_b, duq.Quantity):
             helpers.raise_for_dimension(lj_b, self._dim_lj_b, "lj_b")
-
         return lj_a, lj_b
 
     @property
@@ -292,7 +311,6 @@ class ForceField:
             When the `ForceField` object is not instantiated using the
             alternative constructor method `from_model` (and thus has no model data).
         """
-
         self._raise_for_model()
         return self._dataframe.loc[["Description", self._model_name]]
 
@@ -312,7 +330,6 @@ class ForceField:
             When the `ForceField` object is not instantiated using the
             alternative constructor method `from_model` (and thus has no model data).
         """
-
         self._raise_for_model()
         str_repr = (
             f"Name: {self.model_name}\n"
@@ -321,6 +338,10 @@ class ForceField:
             f"{self.model_publication_citation} {self.model_publication_link}"
         )
         return str_repr
+
+    @property
+    def model_parameters(self):
+        return
 
     @property
     def model_name(self) -> str:
@@ -337,7 +358,6 @@ class ForceField:
             When the `ForceField` object is not instantiated using the
             alternative constructor method `from_model` (and thus has no model data).
         """
-
         self._raise_for_model()
         return self._model_name
 
@@ -356,7 +376,6 @@ class ForceField:
             When the `ForceField` object is not instantiated using the
             alternative constructor method `from_model` (and thus has no model data).
         """
-
         self._raise_for_model()
         return self._model_description
 
@@ -375,7 +394,6 @@ class ForceField:
             When the `ForceField` object is not instantiated using the
             alternative constructor method `from_model` (and thus has no model data).
         """
-
         self._raise_for_model()
         return self._model_ref_name
 
@@ -394,7 +412,6 @@ class ForceField:
             When the `ForceField` object is not instantiated using the
             alternative constructor method `from_model` (and thus has no model data).
         """
-
         self._raise_for_model()
         return self._model_ref_cite
 
@@ -413,7 +430,6 @@ class ForceField:
             When the `ForceField` object is not instantiated using the
             alternative constructor method `from_model` (and thus has no model data).
         """
-
         self._raise_for_model()
         return self._model_ref_link
 
@@ -431,7 +447,6 @@ class ForceField:
             When the `ForceField` object is not instantiated using the
             alternative constructor method `from_model` (and thus has no model data).
         """
-
         self._raise_for_model()
         webbrowser.open_new(self._model_ref_link)
         return
@@ -450,7 +465,6 @@ class ForceField:
         ------
         ValueError
         """
-
         if self._model_name is None:
             raise ValueError("The force-field was not created from a parameter model.")
         return
