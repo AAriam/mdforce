@@ -334,6 +334,9 @@ class Flexible3SiteSPC(ForceField):
         self._initialize_output_arrays(shape_data)
         if self._unitless:
             self.__c = np.tile([self._c_o, self._c_h, self._c_h], self._num_molecules)
+        # Calculate index of first interacting atom for each atom, regarding coulomb interaction
+        for idx_curr_atom in range(self._num_atoms - 3):
+            self._coulomb_idx_first_interacting_atom[idx_curr_atom] = idx_curr_atom + 3 - idx_curr_atom % 3
         return
 
     def fit_units_to_input_data(
@@ -440,8 +443,7 @@ class Flexible3SiteSPC(ForceField):
         self._force_coulomb[...] = 0
         self._energy_coulomb = 0
         # Iterate over the indices of all atoms, other than the last three ones
-        for idx_curr_atom in range(self._num_atoms - 3):
-            idx_first_interacting_atom = idx_curr_atom + 3 - idx_curr_atom % 3
+        for idx_curr_atom, idx_first_interacting_atom in enumerate(self._coulomb_idx_first_interacting_atom):
             # Retrieve the distance-vectors/distances between current atom and all
             # atoms after it, as two arrays
             q_jsi = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom:]

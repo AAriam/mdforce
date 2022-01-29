@@ -32,6 +32,7 @@ class ForceField:
         "_energy_lj",
         "_energy_bond",
         "_energy_angle",
+        "_coulomb_idx_first_interacting_atom",
         "_num_atoms",
         "_num_molecules",
         "_model_name",
@@ -265,6 +266,7 @@ class ForceField:
         self._distances = np.zeros((self._num_atoms, self._num_atoms))
         self._distance_vectors = np.zeros((self._num_atoms, *shape_data))
         self._angles = np.zeros(self._num_molecules)
+        self._coulomb_idx_first_interacting_atom = np.empty(self._num_atoms - 3, dtype=int)
         return
 
     def _calculate_lj_params_a_b(
