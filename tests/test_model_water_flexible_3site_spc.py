@@ -44,7 +44,6 @@ def test_model_water_flexible_3site_spc():
         shape_data = (9, 3)
         # Prepare the force-field for this shape of data
         forcefield.initialize_forcefield(shape_data)
-        forcefield._charges = np.tile([c_o, c_h, c_h], 3)
 
         c = np.tile([c_o, c_h, c_h], 3)
 
