@@ -2,6 +2,7 @@
 This module contains the force-field of the flexible 3-site SPC water model.
 """
 
+
 # Standard library
 from __future__ import annotations
 from typing import Union, Tuple
@@ -33,67 +34,54 @@ class Flexible3SiteSPC(ForceField):
     in the form: [O_1_1, H_1_1, H_1_2, O_2_1, H_2_1, H_2_2, ...]
     """
 
-    __slots__ = [
-        "_mass_o",
-        "_mass_h",
-        "_coulomb_k",
-        "_coulomb_k_converted",
-        "_charge_o",
-        "_charge_o_converted",
-        "_charge_h",
-        "_charge_h_converted",
-        "_charges",
-        "_lj_epsilon_oo",
-        "_lj_epsilon_oo_converted",
-        "_lj_sigma_oo",
-        "_lj_sigma_oo_converted",
+    __slots__ = (
+        "_k_b",
+        "_k_b_conv",
+        "__k_b",
+        "_d0",
+        "_d0_conv",
+        "__d0",
+        "_k_a",
+        "_k_a_conv",
+        "__k_a",
+        "_angle0",
+        "_angle0_conv",
+        "__angle0",
+        "_lj_epsilon",
+        "_lj_epsilon_conv",
+        "_lj_sigma",
+        "_lj_sigma_conv",
         "_lj_a",
         "_lj_b",
-        "_lj_a_converted",
-        "_lj_b_converted",
-        "_bond_k",
-        "_bond_k_converted",
-        "_bond_eq_len",
-        "_bond_eq_len_converted",
-        "_angle_k",
-        "_angle_k_converted",
-        "_angle_eq",
-        "_angle_eq_converted",
+        "_lj_a_conv",
+        "_lj_b_conv",
+        "__lj_a",
+        "__lj_b",
+        "_c_o",
+        "_c_o_conv",
+        "_c_h",
+        "_c_h_conv",
+        "__c",
+        "_k_e",
+        "_k_e_conv",
+        "__k_e",
+        "_m_o",
+        "__m_o",
+        "_m_h",
+        "__m_h",
+        "_unitless",
+        "_fitted",
         "_unit_length",
         "_unit_time",
         "_unit_force",
         "_unit_energy",
-        "_fitted",
-        "__c_o",
-        "__c_h",
-        "__k_e",
-        "__lj_a",
-        "__lj_b",
-        "__k_b",
-        "__eq_dist",
-        "__k_a",
-        "__eq_angle",
-        "__m_o",
-        "__m_h",
-        "_unitless",
-    ]
+    )
 
     # -- Setting class attributes --
     # Pandas Dataframe containing several sets of parameters for the model.
     _dataframe = pd.read_pickle(
         Path(__file__).parent.parent.parent / "data/model_params/water_flexible_3site_spc.pkl"
     )
-    # Read general parameter-descriptions from dataframe
-    d, p = ("Description", "Parameters")
-    _desc_charge_o = _dataframe.loc[d, (p, "Coulomb", "q_O")]
-    _desc_charge_h = _dataframe.loc[d, (p, "Coulomb", "q_H")]
-    _desc_lj_epsilon_oo = _dataframe.loc[d, (p, "Lennard-Jones", "ε_OO")]
-    _desc_lj_sigma_oo = _dataframe.loc[d, (p, "Lennard-Jones", "σ_OO")]
-    _desc_bond_k = _dataframe.loc[d, (p, "Bond vibration", "k")]
-    _desc_bond_eq_len = _dataframe.loc[d, (p, "Bond vibration", "r_OH")]
-    _desc_angle_k = _dataframe.loc[d, (p, "Angle vibration", "k")]
-    _desc_angle_eq = _dataframe.loc[d, (p, "Angle vibration", "θ_HOH")]
-    del d, p
 
     @classmethod
     def from_model(cls, model_name: str) -> Flexible3SiteSPC:
@@ -112,9 +100,7 @@ class Flexible3SiteSPC(ForceField):
             Flexible3SiteSPC
             Instantiated object parametrized using the given parameters model.
         """
-
-        # Read parameters (as strings) from the corresponding row in the dataframe,
-        # and split in order to separate the value and unit.
+        # Read parameters (as strings) from the corresponding row in the dataframe
         p = "Parameters"
         charge_o = cls._dataframe.loc[model_name, (p, "Coulomb", "q_O")]
         charge_h = cls._dataframe.loc[model_name, (p, "Coulomb", "q_H")]
@@ -124,12 +110,10 @@ class Flexible3SiteSPC(ForceField):
         bond_eq_len = cls._dataframe.loc[model_name, (p, "Bond vibration", "r_OH")]
         angle_k = cls._dataframe.loc[model_name, (p, "Angle vibration", "k")]
         angle_eq = cls._dataframe.loc[model_name, (p, "Angle vibration", "θ_HOH")]
-
         # Load constants
         mass_o = duq.Quantity(atom_data.mass_dalton[8], "Da")
         mass_h = duq.Quantity(atom_data.mass_dalton[1], "Da")
         coulomb_k = duq.predefined_constants.coulomb_const
-
         # Create `duq.Quantity` objects from the parameters and
         # instantiate the class using the main constructor.
         forcefield = cls(
@@ -145,7 +129,6 @@ class Flexible3SiteSPC(ForceField):
             mass_oxygen=mass_o,
             mass_hydrogen=mass_h,
         )
-
         # Set the parameters-model info
         forcefield._model_name = model_name
         m = "Metadata"
@@ -209,9 +192,8 @@ class Flexible3SiteSPC(ForceField):
         mass_oxygen : Union[float, str, duq.Quantity]
         mass_hydrogen : Union[float, str, duq.Quantity]
         """
-
+        # Initialize superclass
         super().__init__()
-
         # Verify that arguments are either all numbers, or all strings/duq.Quantity
         args = list(locals().values())[1:-1]
         count_nums = 0
@@ -224,113 +206,135 @@ class Flexible3SiteSPC(ForceField):
             self._unitless = False
         else:
             self._unitless = True
-
-        # Store parameters
-        self._bond_k = (
+        # Store parameters; if parameters are all unitless, store the numbers, otherwise, verify
+        # that they have the correct dimensions, and store them as `duq.Quantity` objects.
+        self._k_b = (
             bond_force_constant
             if self._unitless
             else helpers.convert_to_quantity(
                 bond_force_constant, self._dim_bond_vib_k, "bond_force_constant"
             )
         )
-        self._bond_eq_len = (
+        self._d0 = (
             bond_eq_dist
             if self._unitless
             else helpers.convert_to_quantity(bond_eq_dist, self._dim_bond_eq_dist, "bond_eq_dist")
         )
-        self._angle_k = (
+        self._k_a = (
             angle_force_constant
             if self._unitless
             else helpers.convert_to_quantity(
                 angle_force_constant, self._dim_angle_vib_k, "angle_force_constant"
             )
         )
-        self._angle_eq = (
+        self._angle0 = (
             angle_eq_angle
             if self._unitless
             else helpers.convert_to_quantity(
                 angle_eq_angle, self._dim_angle_eq_angle, "angle_eq_angle"
             )
         )
-        self._lj_epsilon_oo = (
+        self._lj_epsilon = (
             lennard_jones_epsilon_oo
             if self._unitless
             else helpers.convert_to_quantity(
                 lennard_jones_epsilon_oo, self._dim_lj_epsilon, "lennard_jones_epsilon_oo"
             )
         )
-        self._lj_sigma_oo = (
+        self._lj_sigma = (
             lennard_jones_sigma_oo
             if self._unitless
             else helpers.convert_to_quantity(
                 lennard_jones_sigma_oo, self._dim_lj_sigma, "lennard_jones_sigma_oo"
             )
         )
-        self._charge_o = (
+        self._c_o = (
             charge_oxygen
             if self._unitless
             else helpers.convert_to_quantity(charge_oxygen, self._dim_charge, "charge_oxygen")
         )
-        self._charge_h = (
+        self._c_h = (
             charge_hydrogen
             if self._unitless
             else helpers.convert_to_quantity(charge_hydrogen, self._dim_charge, "charge_hydrogen")
         )
-        self._coulomb_k = (
+        self._k_e = (
             coulomb_const
             if self._unitless
             else helpers.convert_to_quantity(coulomb_const, self._dim_coulomb_k, "coulomb_const")
         )
-        self._mass_o = (
+        self._m_o = (
             mass_oxygen
             if self._unitless
             else helpers.convert_to_quantity(mass_oxygen, self._dim_mass, "mass_oxygen")
         )
-        self._mass_h = (
+        self._m_h = (
             mass_hydrogen
             if self._unitless
             else helpers.convert_to_quantity(mass_hydrogen, self._dim_mass, "mass_hydrogen")
         )
-
         # Calculate Lennard-Jones parameters A and B from epsilon and sigma
         self._lj_a, self._lj_b = self._calculate_lj_params_a_b(
-            self._lj_epsilon_oo, self._lj_sigma_oo
+            self._lj_epsilon, self._lj_sigma
         )
-
         # Attributes that are set after calling `fit_units_to_input_data`
-        self._charges = None
-        self._coulomb_k_converted = None
-        self._charge_o_converted = None
-        self._charge_h_converted = None
-        self._lj_epsilon_oo_converted = None
-        self._lj_sigma_oo_converted = None
-        self._lj_a_converted = None
-        self._lj_b_converted = None
-        self._bond_k_converted = None
-        self._angle_eq_converted = None
-        self._angle_k_converted = None
-        self._bond_eq_len_converted = None
+        self._k_b_conv = None
+        self._d0_conv = None
+        self._k_a_conv = None
+        self._angle0_conv = None
+        self._lj_epsilon_conv = None
+        self._lj_sigma_conv = None
+        self._lj_a_conv = None
+        self._lj_b_conv = None
+        self._c_o_conv = None
+        self._c_h_conv = None
+        self._k_e_conv = None
         self._unit_length = None
         self._unit_time = None
         self._unit_force = None
         self._unit_energy = None
-
+        self._fitted = False  # Whether the model has been fitted to input data.
         # Attributes holding numerical values of all parameters
         # If parameters were inputted as pure numbers, these are then directly set here,
         # otherwise they are set after calling the `fit_units_to_input_data` method.
-        self.__c_o = self._charge_o if self._unitless else None
-        self.__c_h = self._charge_h if self._unitless else None
-        self.__k_e = self._coulomb_k if self._unitless else None
+        self.__k_b = self._k_b if self._unitless else None
+        self.__d0 = self._d0 if self._unitless else None
+        self.__k_a = self._k_a if self._unitless else None
+        self.__angle0 = self._angle0 if self._unitless else None
         self.__lj_a = self._lj_a if self._unitless else None
         self.__lj_b = self._lj_b if self._unitless else None
-        self.__k_b = self._bond_k if self._unitless else None
-        self.__eq_dist = self._bond_eq_len if self._unitless else None
-        self.__k_a = self._angle_k if self._unitless else None
-        self.__eq_angle = self._angle_eq if self._unitless else None
-        self.__m_o = self._mass_o if self._unitless else None
-        self.__m_h = self._mass_h if self._unitless else None
+        self.__k_e = self._k_e if self._unitless else None
+        self.__m_o = self._m_o if self._unitless else None
+        self.__m_h = self._m_h if self._unitless else None
+        self.__c = None  # This cannot be set now because number of atoms is needed
+        return
 
-        self._fitted = False  # Whether the model has been fitted to input data.
+    def initialize_forcefield(self, shape_data) -> None:
+        """
+        Prepare the force-field for a specific shape of input coordinates. This is necessary to
+        determine the shape of arrays that are used to store the output data after each force
+        evaluation, since these arrays are only created once and then overwritten after each
+        re-evaluation.
+
+        Parameters
+        ----------
+        shape_data : Tuple(int, int)
+            Shape of the array of positions, where the first value is the number of atoms (should
+            be a multiple of 3), and the second value is the number of spatial dimensions of the
+            coordinates of each atom.
+
+        Returns
+        -------
+            None
+            Arrays for storing the force-field evaluation results are initialized with the
+            correct shape.
+        """
+        self._num_atoms = shape_data[0]
+        self._num_molecules = self._num_atoms // 3
+        self._initialize_output_arrays(shape_data)
+        if self._unitless:
+            self.__c = np.tile([self._c_o, self._c_h, self._c_h], self._num_molecules)
+        return
 
     def fit_units_to_input_data(
         self,
@@ -355,69 +359,59 @@ class Flexible3SiteSPC(ForceField):
             None
             All force-field parameters are converted to be compatible with the given units.
         """
-
         if self._unitless:
             raise ValueError("Input parameters were inputted as unitless numbers.")
         else:
             self._unit_length = helpers.convert_to_unit(unit_length, "length", "unit_length")
             self._unit_time = helpers.convert_to_unit(unit_time, "time", "unit_time")
-
         # Calculate and verify general units
         self._unit_force = self._unit_mass * self._unit_length / self._unit_time ** 2
         helpers.raise_for_dimension(self._unit_force, "force", "_unit_force")
         self._unit_energy = self._unit_force * self._unit_length
         helpers.raise_for_dimension(self._unit_energy, "energy", "_unit_energy")
-
-        # Convert coulomb units
-        self._charge_o_converted = self._charge_o.convert_unit(self._unit_charge)
-        self._charge_h_converted = self._charge_h.convert_unit(self._unit_charge)
-        unit_coulomb_k = self._unit_energy * self._unit_length / self._unit_charge ** 2
-        helpers.raise_for_dimension(unit_coulomb_k, self._dim_coulomb_k, "unit_coulomb_k")
-        self._coulomb_k_converted = self._coulomb_k.convert_unit(unit_coulomb_k)
-        self.__c_o = self._charge_o_converted.value
-        self.__c_h = self._charge_h_converted.value
-        self.__k_e = self._coulomb_k_converted.value
-
-        # Convert Lennard-Jones units
-        self._lj_sigma_oo_converted = self._lj_sigma_oo.convert_unit(self._unit_length)
-        self._lj_epsilon_oo_converted = self._lj_epsilon_oo.convert_unit(self._unit_energy)
-        self._lj_a_converted = self._lj_a.convert_unit(self._unit_energy * self._unit_length ** 12)
-        helpers.raise_for_dimension(self._lj_a_converted, self._dim_lj_a, "_lj_a_converted")
-        self._lj_b_converted = self._lj_b.convert_unit(self._unit_energy * self._unit_length ** 6)
-        helpers.raise_for_dimension(self._lj_b_converted, self._dim_lj_b, "_lj_b_converted")
-        self.__lj_a = self._lj_a_converted.value
-        self.__lj_b = self._lj_b_converted.value
-
         # Convert bond vibration units
         unit_bond_k = self._unit_energy / self._unit_length ** 2
         helpers.raise_for_dimension(unit_bond_k, self._dim_bond_vib_k, "unit_bond_k")
-        self._bond_k_converted = self._bond_k.convert_unit(unit_bond_k)
-        self._bond_eq_len_converted = self._bond_eq_len.convert_unit(self._unit_length)
-        self.__k_b = self._bond_k_converted.value
-        self.__eq_dist = self._bond_eq_len_converted.value
-
+        self._k_b_conv = self._k_b.convert_unit(unit_bond_k)
+        self._d0_conv = self._d0.convert_unit(self._unit_length)
         # Convert angle vibration units
         unit_angle_k = self._unit_energy / self._unit_angle ** 2
         helpers.raise_for_dimension(unit_angle_k, self._dim_angle_vib_k, "unit_angle_k")
-        self._angle_k_converted = self._angle_k.convert_unit(unit_angle_k)
-        self._angle_eq_converted = self._angle_eq.convert_unit(self._unit_angle)
-        self.__k_a = self._angle_k_converted.value
-        self.__eq_angle = self._angle_eq_converted.value
-
+        self._k_a_conv = self._k_a.convert_unit(unit_angle_k)
+        self._angle0_conv = self._angle0.convert_unit(self._unit_angle)
+        # Convert Lennard-Jones units
+        self._lj_sigma_conv = self._lj_sigma.convert_unit(self._unit_length)
+        self._lj_epsilon_conv = self._lj_epsilon.convert_unit(self._unit_energy)
+        self._lj_a_conv = self._lj_a.convert_unit(self._unit_energy * self._unit_length ** 12)
+        helpers.raise_for_dimension(self._lj_a_conv, self._dim_lj_a, "_lj_a_converted")
+        self._lj_b_conv = self._lj_b.convert_unit(self._unit_energy * self._unit_length ** 6)
+        helpers.raise_for_dimension(self._lj_b_conv, self._dim_lj_b, "_lj_b_converted")
+        # Convert coulomb units
+        unit_k_e = self._unit_energy * self._unit_length / self._unit_charge ** 2
+        helpers.raise_for_dimension(unit_k_e, self._dim_coulomb_k, "unit_k_e")
+        self._k_e_conv = self._k_e.convert_unit(unit_k_e)
+        self._c_o_conv = self._c_o.convert_unit(self._unit_charge)
+        self._c_h_conv = self._c_h.convert_unit(self._unit_charge)
+        # Assign numerical values of converted units to attributes used in force functions
+        self.__k_b = self._k_b_conv.value
+        self.__d0 = self._d0_conv.value
+        self.__k_a = self._k_a_conv.value
+        self.__angle0 = self._angle0_conv.value
+        self.__lj_a = self._lj_a_conv.value
+        self.__lj_b = self._lj_b_conv.value
+        self.__k_e = self._k_e_conv.value
         # Create array of charge values in the correct unit
         # (for ease of vector calculation in Coulomb force evaluation)
-        self._charges = np.tile(
+        self.__c = np.tile(
             [
-                self._charge_o_converted.value,
-                self._charge_h_converted.value,
-                self._charge_h_converted.value,
+                self._c_o_conv.value,
+                self._c_h_conv.value,
+                self._c_h_conv.value,
             ],
             self._num_molecules,
         )
-
-        self.__m_o = self._mass_o.value
-        self.__m_h = self._mass_h.value
-
+        self.__m_o = self._m_o.value
+        self.__m_h = self._m_h.value
         self._fitted = True
         return
 
@@ -455,8 +449,8 @@ class Flexible3SiteSPC(ForceField):
             # Calculate the potential between current atom and all atoms after it
             energy = (
                 self.__k_e
-                * self._charges[idx_curr_atom]
-                * self._charges[idx_first_interacting_atom:]
+                * self.__c[idx_curr_atom]
+                * self.__c[idx_first_interacting_atom:]
                 / d_ijs
             )
             self._energy_coulomb += energy.sum()
@@ -534,7 +528,7 @@ class Flexible3SiteSPC(ForceField):
             ]
             d_ijs = self._distances[idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3]
             # Calculate common terms only once
-            delta_d_ijs = d_ijs - self.__eq_dist
+            delta_d_ijs = d_ijs - self.__d0
             k__delta_d_ijs = self.__k_b * delta_d_ijs
             # Calculate the potential of the whole molecule
             self._energy_bond += (k__delta_d_ijs * delta_d_ijs / 2).sum()
@@ -581,7 +575,7 @@ class Flexible3SiteSPC(ForceField):
             # Store the angle
             self._angles[idx_curr_atom // 3] = angle
             # Calculate common terms
-            delta_angle = angle - self.__eq_angle
+            delta_angle = angle - self.__angle0
             a = self.__k_a * delta_angle / abs(np.sin(angle))
             # Calculate the potential
             self._energy_angle += 0.5 * self.__k_a * delta_angle ** 2
@@ -641,39 +635,39 @@ class Flexible3SiteSPC(ForceField):
             )
             + f"Model Parameters:\n----------------\n"
             + (
-                "(parameters have not yet been converted into the units of input data)\n"
-                if not self._fitted
-                else "(with converted values fitted to input data after equal sign)\n"
+                (
+                    "(parameters have not yet been converted into the units of input data)\n"
+                    if not self._fitted
+                    else "(with converted values fitted to input data after equal sign)\n"
+                ) if not self._unitless else "(parameters have been inputted without units)"
             )
-            + f"\t{self._desc_charge_o} (q_O):\n"
-            f"{self._charge_o.str_repr_short}"
-            + (f" = {self._charge_o_converted.str_repr_short}\n" if self._fitted else "\n")
-            + f"\t{self._desc_charge_h} (q_H):\n"
-            f"{self._charge_h.str_repr_short}"
-            + (f" = {self._charge_h_converted.str_repr_short}\n" if self._fitted else "\n")
-            + f"\t{self._desc_lj_epsilon_oo} (ε_OO):\n"
-            f"{self._lj_epsilon_oo.str_repr_short}"
-            + (f" = {self._lj_epsilon_oo_converted.str_repr_short}\n" if self._fitted else "\n")
-            + f"\t{self._desc_lj_sigma_oo} (σ_OO):\n"
-            f"{self._lj_sigma_oo.str_repr_short}"
-            + (f" = {self._lj_sigma_oo_converted.str_repr_short}\n" if self._fitted else "\n")
-            + f"\tLennard-Jones parameter A:\n"
-            f"{self._lj_a.str_repr_short}"
-            + (f" = {self._lj_a_converted.str_repr_short}\n" if self._fitted else "\n")
-            + f"\tLennard-Jones parameter B:\n"
-            f"{self._lj_b.str_repr_short}"
-            + (f" = {self._lj_b_converted.str_repr_short}\n" if self._fitted else "\n")
-            + f"\t{self._desc_bond_k} (k_bond):\n"
-            f"{self._bond_k.str_repr_short}"
-            + (f" = {self._bond_k_converted.str_repr_short}\n" if self._fitted else "\n")
-            + f"\t{self._desc_bond_eq_len} (r_OH):\n"
-            f"{self._bond_eq_len.str_repr_short}"
-            + (f" = {self._bond_eq_len_converted.str_repr_short}\n" if self._fitted else "\n")
-            + f"\t{self._desc_angle_k} (k_angle):\n"
-            f"{self._angle_k.str_repr_short}"
-            + (f" = {self._angle_k_converted.str_repr_short}\n" if self._fitted else "\n")
-            + f"\t{self._desc_angle_eq} (θ_HOH):\n"
-            f"{self._angle_eq.str_repr_short}"
-            + (f" = {self._angle_eq_converted.str_repr_short}" if self._fitted else "")
+            + self.model_parameters
         )
         return str_repr
+
+    @property
+    def model_parameters(self):
+        # Read general parameter-descriptions from dataframe
+        d, p = ("Description", "Parameters")
+        descriptions = {
+            "k_b": f"{self._dataframe.loc[d, (p, 'Bond vibration', 'k')]} (k_b)",
+            "d0": f"{self._dataframe.loc[d, (p, 'Bond vibration', 'r_OH')]} (r_OH)",
+            "k_a": f"{self._dataframe.loc[d, (p, 'Angle vibration', 'k')]} (k_a)",
+            "angle0": f"{self._dataframe.loc[d, (p, 'Angle vibration', 'θ_HOH')]} (θ_HOH)",
+            "lj_epsilon": f"{self._dataframe.loc[d, (p, 'Lennard-Jones', 'ε_OO')]} (ε_OO)",
+            "lj_sigma": f"{self._dataframe.loc[d, (p, 'Lennard-Jones', 'σ_OO')]} (σ_OO)",
+            "lj_a": "Lennard-Jones parameter A",
+            "lj_b": "Lennard-Jones parameter B",
+            "c_o": f"{self._dataframe.loc[d, (p, 'Coulomb', 'q_O')]} (q_O)",
+            "c_h": f"{self._dataframe.loc[d, (p, 'Coulomb', 'q_H')]} (q_H)",
+        }
+        str_repr = ""
+        for var_name, desc in descriptions.items():
+            var = getattr(self, f"_{var_name}")
+            var_conv = getattr(self, f"_{var_name}_conv") if self._fitted else None
+            str_repr += (
+                f"{desc}: {var if self._unitless else var.str_repr_short}"
+                + (f" (converted: {var_conv.str_repr_short})\n" if self._fitted else "\n")
+            )
+        return str_repr
+
