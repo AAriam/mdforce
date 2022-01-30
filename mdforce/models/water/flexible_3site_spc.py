@@ -309,7 +309,7 @@ class Flexible3SiteSPC(ForceField):
         self.__c = None  # This cannot be set now because number of atoms is needed
         return
 
-    def initialize_forcefield(self, shape_data: Tuple[int, int], pbc: bool = False) -> None:
+    def initialize_forcefield(self, shape_data: Tuple[int, int], pbc_cell_lengths: np.ndarray = None) -> None:
         """
         Prepare the force-field for a specific shape of input coordinates. This is necessary to
         determine the shape of arrays that are used to store the output data after each force
@@ -322,8 +322,9 @@ class Flexible3SiteSPC(ForceField):
             Shape of the array of positions, where the first value is the number of atoms (should
             be a multiple of 3), and the second value is the number of spatial dimensions of the
             coordinates of each atom.
-        pbc : bool
-            Whether to calculate distances and forces using periodic boundary condition or not.
+        pbc_cell_lengths : numpy.ndarray
+            Lengths of the unit cell of the periodic system as a 1D-array of shape (3, ). If set to
+            None, then periodic boundary condition will not be used.
 
         Returns
         -------
@@ -331,17 +332,7 @@ class Flexible3SiteSPC(ForceField):
             Arrays for storing the force-field evaluation results are initialized with the
             correct shape.
         """
-        self._num_atoms = shape_data[0]
-        self._num_molecules = self._num_atoms // 3
-        if self._pbc:
-            self._func_update_distances = self._update_distances_pbc
-            self._func_update_coulomb = self._update_coulomb_pbc
-            self._func_update_lennard_jones = self._update_lennard_jones_pbc
-        else:
-            self._func_update_distances = self._update_distances
-            self._func_update_coulomb = self._update_coulomb
-            self._func_update_lennard_jones = self._update_lennard_jones
-        self._initialize_output_arrays(shape_data)
+        super().initialize_forcefield(shape_data, pbc_cell_lengths)
         if self._unitless:
             self.__c = np.tile([self._c_o, self._c_h, self._c_h], self._num_molecules)
         # Calculate index of first long-range interacting atom for each atom (i.e. the index of
@@ -611,7 +602,18 @@ class Flexible3SiteSPC(ForceField):
         return
 
     def _update_distances_pbc(self, positions) -> None:
-        pass
+        # Iterate over all atoms (other than the last atom)
+        for idx_atom, coord_atom in enumerate(positions[:-1]):
+            # Calculate distance vectors between that atom and all other atoms after it
+            self._distance_vectors[idx_atom, idx_atom + 1:] = (
+                    coord_atom - positions[idx_atom + 1:]
+            )
+            self._distance_vectors[idx_atom, self._idx_first_long_range_interacting_atom:] -= (
+                    self._pbc_box_lengths * np.rint(self._distance_vectors[idx_atom, self._idx_first_long_range_interacting_atom:] / self._pbc_box_lengths)
+            )
+        # Calculate all distances at once, from the distance vectors
+        self._distances[...] = np.linalg.norm(self._distance_vectors, axis=2)
+        return
 
     def _update_distances(self, positions) -> None:
         """
