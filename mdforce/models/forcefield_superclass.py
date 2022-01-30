@@ -217,7 +217,9 @@ class ForceField:
     def _update_distances(self, positions) -> None:
         pass
 
-    def initialize_forcefield(self, shape_data: Tuple[int, int], pbc_cell_lengths: np.ndarray = None) -> None:
+    def initialize_forcefield(
+        self, shape_data: Tuple[int, int], pbc_cell_lengths: np.ndarray = None
+    ) -> None:
         """
         Prepare the force-field for a specific shape of input coordinates. This is necessary to
         determine the shape of arrays that are used to store the output data after each force

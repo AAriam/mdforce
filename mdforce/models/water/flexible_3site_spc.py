@@ -230,9 +230,7 @@ class Flexible3SiteSPC(ForceField):
         self._angle0 = (
             angle_eq_angle
             if self._unitless
-            else helpers.convert_to_quantity(
-                angle_eq_angle, self._dim_angle0, "angle_eq_angle"
-            )
+            else helpers.convert_to_quantity(angle_eq_angle, self._dim_angle0, "angle_eq_angle")
         )
         self._lj_epsilon = (
             lennard_jones_epsilon_oo
@@ -274,9 +272,7 @@ class Flexible3SiteSPC(ForceField):
             else helpers.convert_to_quantity(mass_hydrogen, self._dim_m, "mass_hydrogen")
         )
         # Calculate Lennard-Jones parameters A and B from epsilon and sigma
-        self._lj_a, self._lj_b = self._calculate_lj_params_a_b(
-            self._lj_epsilon, self._lj_sigma
-        )
+        self._lj_a, self._lj_b = self._calculate_lj_params_a_b(self._lj_epsilon, self._lj_sigma)
         # Attributes that are set after calling `fit_units_to_input_data`
         self._k_b_conv = None
         self._d0_conv = None
@@ -309,7 +305,9 @@ class Flexible3SiteSPC(ForceField):
         self.__c = None  # This cannot be set now because number of atoms is needed
         return
 
-    def initialize_forcefield(self, shape_data: Tuple[int, int], pbc_cell_lengths: np.ndarray = None) -> None:
+    def initialize_forcefield(
+        self, shape_data: Tuple[int, int], pbc_cell_lengths: np.ndarray = None
+    ) -> None:
         """
         Prepare the force-field for a specific shape of input coordinates. This is necessary to
         determine the shape of arrays that are used to store the output data after each force
@@ -338,7 +336,9 @@ class Flexible3SiteSPC(ForceField):
         # Calculate index of first long-range interacting atom for each atom (i.e. the index of
         # first atom after the current atom that is not in the same molecule as the current atom)
         for idx_curr_atom in range(self._num_atoms - 3):
-            self._idx_first_long_range_interacting_atom[idx_curr_atom] = idx_curr_atom + 3 - idx_curr_atom % 3
+            self._idx_first_long_range_interacting_atom[idx_curr_atom] = (
+                idx_curr_atom + 3 - idx_curr_atom % 3
+            )
         return
 
     def fit_units_to_input_data(
@@ -449,7 +449,7 @@ class Flexible3SiteSPC(ForceField):
         self._energy_coulomb = 0
         # Iterate over the indices of all atoms, other than the last three ones
         for idx_curr_atom, idx_first_interacting_atom in enumerate(
-                self._idx_first_long_range_interacting_atom
+            self._idx_first_long_range_interacting_atom
         ):
             # Retrieve the distance-vectors/distances between current atom and all
             # atoms after it, as two arrays
@@ -535,9 +535,7 @@ class Flexible3SiteSPC(ForceField):
             # Retrieve the distance-vectors/distances between the oxygen and the two hydrogen
             # atoms in the same molecule (these are the next two atoms after each oxygen)
             # as two single arrays
-            q_jsi = self._distance_vectors[
-                idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3
-            ]
+            q_jsi = self._distance_vectors[idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3]
             d_ijs = self._distances[idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3]
             # Calculate common terms only once
             delta_d_ijs = d_ijs - self.__d0
@@ -605,11 +603,14 @@ class Flexible3SiteSPC(ForceField):
         # Iterate over all atoms (other than the last atom)
         for idx_atom, coord_atom in enumerate(positions[:-1]):
             # Calculate distance vectors between that atom and all other atoms after it
-            self._distance_vectors[idx_atom, idx_atom + 1:] = (
-                    coord_atom - positions[idx_atom + 1:]
+            self._distance_vectors[idx_atom, idx_atom + 1 :] = (
+                coord_atom - positions[idx_atom + 1 :]
             )
-            self._distance_vectors[idx_atom, self._idx_first_long_range_interacting_atom:] -= (
-                    self._pbc_box_lengths * np.rint(self._distance_vectors[idx_atom, self._idx_first_long_range_interacting_atom:] / self._pbc_box_lengths)
+            self._distance_vectors[
+                idx_atom, self._idx_first_long_range_interacting_atom :
+            ] -= self._pbc_box_lengths * np.rint(
+                self._distance_vectors[idx_atom, self._idx_first_long_range_interacting_atom :]
+                / self._pbc_box_lengths
             )
         # Calculate all distances at once, from the distance vectors
         self._distances[...] = np.linalg.norm(self._distance_vectors, axis=2)
@@ -665,7 +666,9 @@ class Flexible3SiteSPC(ForceField):
                     "(parameters have not yet been converted into the units of input data)\n"
                     if not self._fitted
                     else "(with converted values fitted to input data in parenthesis)\n"
-                ) if not self._unitless else "(parameters have been inputted without units)"
+                )
+                if not self._unitless
+                else "(parameters have been inputted without units)"
             )
             + self.model_parameters
         )
@@ -691,9 +694,7 @@ class Flexible3SiteSPC(ForceField):
         for var_name, desc in descriptions.items():
             var = getattr(self, f"_{var_name}")
             var_conv = getattr(self, f"_{var_name}_conv") if self._fitted else None
-            str_repr += (
-                f"{desc}: {var if self._unitless else var.str_repr_short}"
-                + (f" (converted: {var_conv.str_repr_short})\n" if self._fitted else "\n")
+            str_repr += f"{desc}: {var if self._unitless else var.str_repr_short}" + (
+                f" (converted: {var_conv.str_repr_short})\n" if self._fitted else "\n"
             )
         return str_repr
-

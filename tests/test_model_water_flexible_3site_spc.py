@@ -155,4 +155,4 @@ def test_model_water_flexible_3site_spc():
 
             # Verify that the acceleration is the same
             masses = np.tile([m_o, m_h, m_h], 3).reshape(-1, 1)
-            assert np.all(np.isclose(forcefield.acceleration, f_total/masses))
+            assert np.all(np.isclose(forcefield.acceleration, f_total / masses))
