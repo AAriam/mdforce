@@ -205,7 +205,16 @@ class ForceField:
     def _update_coulomb(self) -> None:
         pass
 
+    def _update_coulomb_pbc_ewald(self) -> None:
+        pass
+
+    def _update_coulomb_pbc_mesh_ewald(self) -> None:
+        pass
+
     def _update_lennard_jones(self) -> None:
+        pass
+
+    def _update_lennard_jones_pbc(self) -> None:
         pass
 
     def _update_bond_vibration(self) -> None:
@@ -214,8 +223,61 @@ class ForceField:
     def _update_angle_vibration(self) -> None:
         pass
 
-    def _update_distances(self, positions) -> None:
-        pass
+    def _update_distances(self, positions: np.ndarray) -> None:
+        """
+        Calculate the distance vector and distance between all unique pairs of atoms
+        at the current state.
+
+        Returns
+        -------
+            None
+            Distance vectors and distances are stored in `self.distance_vectors` and
+            `self.distances` respectively.
+
+        Notes
+        -----
+        The distance vectors 'q_i - q_j' and their corresponding norms '||q_i - q_j||' are
+        calculated for all unique pairs, where 'i' is smaller than 'j', and are accessed by
+        `self._distance_vectors[i, j]` and `self._distances[i, j]`. However, for the case where
+        'i' is larger than 'j', instead of calling `self._distance_vectors[i, j]` and
+        `self._distances[i, j]`, `-self._distance_vectors[j, i]` and
+        `-self._distances[j, i]` should be called, respectively (notice the negative sign in the
+        beginning).
+        """
+        self._calculate_distance_vectors(positions)
+        self._calculate_distances()
+        return
+
+    def _update_distances_pbc(self, positions: np.ndarray) -> None:
+        self._calculate_distance_vectors(positions)
+        self._calculate_distance_vectors_mic()
+        self._calculate_distances()
+        return
+
+    def _calculate_distance_vectors(self, positions: np.ndarray) -> None:
+        # Iterate over all atoms (other than the last atom)
+        for idx_atom, coord_atom in enumerate(positions[:-1]):
+            # Calculate distance vectors between that atom and all other atoms after it
+            self._distance_vectors[idx_atom, idx_atom + 1:] = (
+                    coord_atom - positions[idx_atom + 1:]
+            )
+        return
+
+    def _calculate_distance_vectors_mic(self) -> None:
+        for idx_atom, idx_first_long_range_interacting_atom in enumerate(
+                self._idx_first_long_range_interacting_atom
+        ):
+            self._distance_vectors[
+                idx_atom, idx_first_long_range_interacting_atom:
+                ] -= self._pbc_box_lengths * np.rint(
+                    self._distance_vectors[idx_atom, idx_first_long_range_interacting_atom:]
+                    / self._pbc_box_lengths
+                )
+        return
+
+    def _calculate_distances(self) -> None:
+        # Calculate all distances at once, from the distance vectors
+        self._distances[...] = np.linalg.norm(self._distance_vectors, axis=2)
 
     def initialize_forcefield(
         self, shape_data: Tuple[int, int], pbc_cell_lengths: np.ndarray = None
@@ -248,7 +310,7 @@ class ForceField:
         if pbc_cell_lengths is not None:
             self._pbc_box_lengths = pbc_cell_lengths
             self._func_update_distances = self._update_distances_pbc
-            self._func_update_coulomb = self._update_coulomb_pbc
+            self._func_update_coulomb = self._update_coulomb_pbc_ewald
             self._func_update_lennard_jones = self._update_lennard_jones_pbc
         else:
             self._func_update_distances = self._update_distances
