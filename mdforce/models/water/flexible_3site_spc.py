@@ -599,54 +599,6 @@ class Flexible3SiteSPC(ForceField):
             self._force_angle[idx_curr_atom] = -(f_i + f_k)
         return
 
-    def _update_distances_pbc(self, positions) -> None:
-        # Iterate over all atoms (other than the last atom)
-        for idx_atom, coord_atom in enumerate(positions[:-1]):
-            # Calculate distance vectors between that atom and all other atoms after it
-            self._distance_vectors[idx_atom, idx_atom + 1 :] = (
-                coord_atom - positions[idx_atom + 1 :]
-            )
-            self._distance_vectors[
-                idx_atom, self._idx_first_long_range_interacting_atom :
-            ] -= self._pbc_box_lengths * np.rint(
-                self._distance_vectors[idx_atom, self._idx_first_long_range_interacting_atom :]
-                / self._pbc_box_lengths
-            )
-        # Calculate all distances at once, from the distance vectors
-        self._distances[...] = np.linalg.norm(self._distance_vectors, axis=2)
-        return
-
-    def _update_distances(self, positions) -> None:
-        """
-        Calculate the distance vector and distance between all unique pairs of atoms
-        at the current state.
-
-        Returns
-        -------
-            None
-            Distance vectors and distances are stored in `self.distance_vectors` and
-            `self.distances` respectively.
-
-        Notes
-        -----
-        The distance vectors 'q_i - q_j' and their corresponding norms '||q_i - q_j||' are
-        calculated for all unique pairs, where 'i' is smaller than 'j', and are accessed by
-        `self._distance_vectors[i, j]` and `self._distances[i, j]`. However, for the case where
-        'i' is larger than 'j', instead of calling `self._distance_vectors[i, j]` and
-        `self._distances[i, j]`, `-self._distance_vectors[j, i]` and
-        `-self._distances[j, i]` should be called, respectively (notice the negative sign in the
-        beginning).
-        """
-        # Iterate over all atoms (other than the last atom)
-        for idx_atom, coord_atom in enumerate(positions[:-1]):
-            # Calculate distance vectors between that atom and all other atoms after it
-            self._distance_vectors[idx_atom, idx_atom + 1 :] = (
-                coord_atom - positions[idx_atom + 1 :]
-            )
-        # Calculate all distances at once, from the distance vectors
-        self._distances[...] = np.linalg.norm(self._distance_vectors, axis=2)
-        return
-
     def __str__(self) -> str:
         """
         String representation of the force-field, containing information on the model (in case
