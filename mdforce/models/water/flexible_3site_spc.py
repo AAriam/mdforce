@@ -309,7 +309,7 @@ class Flexible3SiteSPC(ForceField):
         self.__c = None  # This cannot be set now because number of atoms is needed
         return
 
-    def initialize_forcefield(self, shape_data) -> None:
+    def initialize_forcefield(self, shape_data: Tuple[int, int], pbc: bool = False) -> None:
         """
         Prepare the force-field for a specific shape of input coordinates. This is necessary to
         determine the shape of arrays that are used to store the output data after each force
@@ -322,6 +322,8 @@ class Flexible3SiteSPC(ForceField):
             Shape of the array of positions, where the first value is the number of atoms (should
             be a multiple of 3), and the second value is the number of spatial dimensions of the
             coordinates of each atom.
+        pbc : bool
+            Whether to calculate distances and forces using periodic boundary condition or not.
 
         Returns
         -------
@@ -331,6 +333,14 @@ class Flexible3SiteSPC(ForceField):
         """
         self._num_atoms = shape_data[0]
         self._num_molecules = self._num_atoms // 3
+        if self._pbc:
+            self._func_update_distances = self._update_distances_pbc
+            self._func_update_coulomb = self._update_coulomb_pbc
+            self._func_update_lennard_jones = self._update_lennard_jones_pbc
+        else:
+            self._func_update_distances = self._update_distances
+            self._func_update_coulomb = self._update_coulomb
+            self._func_update_lennard_jones = self._update_lennard_jones
         self._initialize_output_arrays(shape_data)
         if self._unitless:
             self.__c = np.tile([self._c_o, self._c_h, self._c_h], self._num_molecules)
@@ -425,6 +435,9 @@ class Flexible3SiteSPC(ForceField):
         self._acceleration[2::3] = self._force_total[2::3] / self.__m_h
         return
 
+    def _update_coulomb_pbc(self) -> None:
+        pass
+
     def _update_coulomb(self) -> None:
         """
         Calculate the Coulomb potential of the system, and the force vector on each atom.
@@ -464,6 +477,9 @@ class Flexible3SiteSPC(ForceField):
             self._force_coulomb[idx_curr_atom] += f_ijs.sum(axis=0)
             self._force_coulomb[idx_first_interacting_atom:] += -f_ijs
         return
+
+    def _update_lennard_jones_pbc(self) -> None:
+        pass
 
     def _update_lennard_jones(self) -> None:
         """
@@ -593,6 +609,9 @@ class Flexible3SiteSPC(ForceField):
             # Calculate the force on oxygen
             self._force_angle[idx_curr_atom] = -(f_i + f_k)
         return
+
+    def _update_distances_pbc(self, positions) -> None:
+        pass
 
     def _update_distances(self, positions) -> None:
         """
