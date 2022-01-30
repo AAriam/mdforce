@@ -40,7 +40,7 @@ class ForceField:
         "_model_ref_name",
         "_model_ref_cite",
         "_model_ref_link",
-        "_pbc",
+        "_pbc_box_lengths",
         "_func_update_distances",
         "_func_update_lennard_jones",
         "_func_update_coulomb",
@@ -119,7 +119,7 @@ class ForceField:
         # Attributes that are set after calling `initialize_forcefield`
         self._num_molecules = None
         self._num_atoms = None
-        self._pbc = None
+        self._pbc_box_lengths = None
         self._func_update_distances = None
         self._func_update_lennard_jones = None
         self._func_update_coulomb = None
@@ -217,7 +217,7 @@ class ForceField:
     def _update_distances(self, positions) -> None:
         pass
 
-    def initialize_forcefield(self, shape_data: Tuple[int, int], pbc: bool = False) -> None:
+    def initialize_forcefield(self, shape_data: Tuple[int, int], pbc_cell_lengths: np.ndarray = None) -> None:
         """
         Prepare the force-field for a specific shape of input coordinates. This is necessary to
         determine the shape of arrays that are used to store the output data after each force
@@ -230,8 +230,9 @@ class ForceField:
             Shape of the array of positions, where the first value is the number of atoms (should
             be a multiple of 3), and the second value is the number of spatial dimensions of the
             coordinates of each atom.
-        pbc : bool
-            Whether to calculate distances and forces using periodic boundary condition or not.
+        pbc_cell_lengths : numpy.ndarray
+            Lengths of the unit cell of the periodic system as a 1D-array of shape (3, ). If set to
+            None, then periodic boundary condition will not be used.
 
         Returns
         -------
@@ -242,8 +243,8 @@ class ForceField:
         # Calculate number of atoms and molecules
         self._num_atoms = shape_data[0]
         self._num_molecules = self._num_atoms // 3
-        self._pbc = pbc
-        if self._pbc:
+        if pbc_cell_lengths is not None:
+            self._pbc_box_lengths = pbc_cell_lengths
             self._func_update_distances = self._update_distances_pbc
             self._func_update_coulomb = self._update_coulomb_pbc
             self._func_update_lennard_jones = self._update_lennard_jones_pbc
