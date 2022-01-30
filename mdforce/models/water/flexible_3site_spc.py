@@ -212,26 +212,26 @@ class Flexible3SiteSPC(ForceField):
             bond_force_constant
             if self._unitless
             else helpers.convert_to_quantity(
-                bond_force_constant, self._dim_bond_vib_k, "bond_force_constant"
+                bond_force_constant, self._dim_k_b, "bond_force_constant"
             )
         )
         self._d0 = (
             bond_eq_dist
             if self._unitless
-            else helpers.convert_to_quantity(bond_eq_dist, self._dim_bond_eq_dist, "bond_eq_dist")
+            else helpers.convert_to_quantity(bond_eq_dist, self._dim_d0, "bond_eq_dist")
         )
         self._k_a = (
             angle_force_constant
             if self._unitless
             else helpers.convert_to_quantity(
-                angle_force_constant, self._dim_angle_vib_k, "angle_force_constant"
+                angle_force_constant, self._dim_k_a, "angle_force_constant"
             )
         )
         self._angle0 = (
             angle_eq_angle
             if self._unitless
             else helpers.convert_to_quantity(
-                angle_eq_angle, self._dim_angle_eq_angle, "angle_eq_angle"
+                angle_eq_angle, self._dim_angle0, "angle_eq_angle"
             )
         )
         self._lj_epsilon = (
@@ -251,27 +251,27 @@ class Flexible3SiteSPC(ForceField):
         self._c_o = (
             charge_oxygen
             if self._unitless
-            else helpers.convert_to_quantity(charge_oxygen, self._dim_charge, "charge_oxygen")
+            else helpers.convert_to_quantity(charge_oxygen, self._dim_c, "charge_oxygen")
         )
         self._c_h = (
             charge_hydrogen
             if self._unitless
-            else helpers.convert_to_quantity(charge_hydrogen, self._dim_charge, "charge_hydrogen")
+            else helpers.convert_to_quantity(charge_hydrogen, self._dim_c, "charge_hydrogen")
         )
         self._k_e = (
             coulomb_const
             if self._unitless
-            else helpers.convert_to_quantity(coulomb_const, self._dim_coulomb_k, "coulomb_const")
+            else helpers.convert_to_quantity(coulomb_const, self._dim_k_e, "coulomb_const")
         )
         self._m_o = (
             mass_oxygen
             if self._unitless
-            else helpers.convert_to_quantity(mass_oxygen, self._dim_mass, "mass_oxygen")
+            else helpers.convert_to_quantity(mass_oxygen, self._dim_m, "mass_oxygen")
         )
         self._m_h = (
             mass_hydrogen
             if self._unitless
-            else helpers.convert_to_quantity(mass_hydrogen, self._dim_mass, "mass_hydrogen")
+            else helpers.convert_to_quantity(mass_hydrogen, self._dim_m, "mass_hydrogen")
         )
         # Calculate Lennard-Jones parameters A and B from epsilon and sigma
         self._lj_a, self._lj_b = self._calculate_lj_params_a_b(
@@ -334,9 +334,10 @@ class Flexible3SiteSPC(ForceField):
         self._initialize_output_arrays(shape_data)
         if self._unitless:
             self.__c = np.tile([self._c_o, self._c_h, self._c_h], self._num_molecules)
-        # Calculate index of first interacting atom for each atom, regarding coulomb interaction
+        # Calculate index of first long-range interacting atom for each atom (i.e. the index of
+        # first atom after the current atom that is not in the same molecule as the current atom)
         for idx_curr_atom in range(self._num_atoms - 3):
-            self._coulomb_idx_first_interacting_atom[idx_curr_atom] = idx_curr_atom + 3 - idx_curr_atom % 3
+            self._idx_first_long_range_interacting_atom[idx_curr_atom] = idx_curr_atom + 3 - idx_curr_atom % 3
         return
 
     def fit_units_to_input_data(
@@ -374,12 +375,12 @@ class Flexible3SiteSPC(ForceField):
         helpers.raise_for_dimension(self._unit_energy, "energy", "_unit_energy")
         # Convert bond vibration units
         unit_bond_k = self._unit_energy / self._unit_length ** 2
-        helpers.raise_for_dimension(unit_bond_k, self._dim_bond_vib_k, "unit_bond_k")
+        helpers.raise_for_dimension(unit_bond_k, self._dim_k_b, "unit_bond_k")
         self._k_b_conv = self._k_b.convert_unit(unit_bond_k)
         self._d0_conv = self._d0.convert_unit(self._unit_length)
         # Convert angle vibration units
         unit_angle_k = self._unit_energy / self._unit_angle ** 2
-        helpers.raise_for_dimension(unit_angle_k, self._dim_angle_vib_k, "unit_angle_k")
+        helpers.raise_for_dimension(unit_angle_k, self._dim_k_a, "unit_angle_k")
         self._k_a_conv = self._k_a.convert_unit(unit_angle_k)
         self._angle0_conv = self._angle0.convert_unit(self._unit_angle)
         # Convert Lennard-Jones units
@@ -391,7 +392,7 @@ class Flexible3SiteSPC(ForceField):
         helpers.raise_for_dimension(self._lj_b_conv, self._dim_lj_b, "_lj_b_converted")
         # Convert coulomb units
         unit_k_e = self._unit_energy * self._unit_length / self._unit_charge ** 2
-        helpers.raise_for_dimension(unit_k_e, self._dim_coulomb_k, "unit_k_e")
+        helpers.raise_for_dimension(unit_k_e, self._dim_k_e, "unit_k_e")
         self._k_e_conv = self._k_e.convert_unit(unit_k_e)
         self._c_o_conv = self._c_o.convert_unit(self._unit_charge)
         self._c_h_conv = self._c_h.convert_unit(self._unit_charge)
@@ -443,7 +444,9 @@ class Flexible3SiteSPC(ForceField):
         self._force_coulomb[...] = 0
         self._energy_coulomb = 0
         # Iterate over the indices of all atoms, other than the last three ones
-        for idx_curr_atom, idx_first_interacting_atom in enumerate(self._coulomb_idx_first_interacting_atom):
+        for idx_curr_atom, idx_first_interacting_atom in enumerate(
+                self._idx_first_long_range_interacting_atom
+        ):
             # Retrieve the distance-vectors/distances between current atom and all
             # atoms after it, as two arrays
             q_jsi = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom:]
@@ -640,7 +643,7 @@ class Flexible3SiteSPC(ForceField):
                 (
                     "(parameters have not yet been converted into the units of input data)\n"
                     if not self._fitted
-                    else "(with converted values fitted to input data after equal sign)\n"
+                    else "(with converted values fitted to input data in parenthesis)\n"
                 ) if not self._unitless else "(parameters have been inputted without units)"
             )
             + self.model_parameters

@@ -32,7 +32,7 @@ class ForceField:
         "_energy_lj",
         "_energy_bond",
         "_energy_angle",
-        "_coulomb_idx_first_interacting_atom",
+        "_idx_first_long_range_interacting_atom",
         "_num_atoms",
         "_num_molecules",
         "_model_name",
@@ -43,17 +43,17 @@ class ForceField:
     )
 
     # Correct dimension of force-field parameters
-    _dim_bond_vib_k = duq.Dimension("energy.length^-2")
-    _dim_bond_eq_dist = duq.Dimension("length")
-    _dim_angle_vib_k = duq.Dimension("energy.dimensionless^-2")
-    _dim_angle_eq_angle = duq.Dimension("dimensionless")
+    _dim_k_b = duq.Dimension("energy.length^-2")
+    _dim_d0 = duq.Dimension("length")
+    _dim_k_a = duq.Dimension("energy.dimensionless^-2")
+    _dim_angle0 = duq.Dimension("dimensionless")
     _dim_lj_epsilon = duq.Dimension("energy")
     _dim_lj_sigma = duq.Dimension("length")
     _dim_lj_a = duq.Dimension("energy.length^12")
     _dim_lj_b = duq.Dimension("energy.length^6")
-    _dim_charge = duq.Dimension("electric charge")
-    _dim_coulomb_k = duq.Dimension("energy.length.electric charge^-2")
-    _dim_mass = duq.Dimension("mass")
+    _dim_c = duq.Dimension("electric charge")
+    _dim_k_e = duq.Dimension("energy.length.electric charge^-2")
+    _dim_m = duq.Dimension("mass")
     # Internal units of class data
     _unit_mass = duq.Unit("Da")
     _unit_charge = duq.Unit("e")
@@ -266,7 +266,7 @@ class ForceField:
         self._distances = np.zeros((self._num_atoms, self._num_atoms))
         self._distance_vectors = np.zeros((self._num_atoms, *shape_data))
         self._angles = np.zeros(self._num_molecules)
-        self._coulomb_idx_first_interacting_atom = np.empty(self._num_atoms - 3, dtype=int)
+        self._idx_first_long_range_interacting_atom = np.zeros(self._num_atoms - 3, dtype=int)
         return
 
     def _calculate_lj_params_a_b(
