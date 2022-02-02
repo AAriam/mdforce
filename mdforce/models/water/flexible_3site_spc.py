@@ -17,6 +17,8 @@ import duq
 from ...data import atom_data
 from ... import helpers
 from ..forcefield_superclass import ForceField
+from ... import terms_multi_vectorized_lazy as force_terms
+from ... import switch_functions as switch
 
 
 __all__ = ["Flexible3SiteSPC"]
@@ -469,9 +471,6 @@ class Flexible3SiteSPC(ForceField):
             self._force_coulomb[idx_first_interacting_atom:] += -f_ijs
         return
 
-    def _update_lennard_jones_pbc(self) -> None:
-        pass
-
     def _update_lennard_jones(self) -> None:
         """
         Calculate the Lennard-Jones potential of the system, and the force vector on each atom.
@@ -497,19 +496,52 @@ class Flexible3SiteSPC(ForceField):
             # atoms after it, as two arrays
             q_jsi = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom::3]
             d_ijs = self._distances[idx_curr_atom, idx_first_interacting_atom::3]
-            # Calculate common terms only once
-            inv_d2 = 1 / d_ijs ** 2
-            inv_d6 = inv_d2 ** 3
-            # Calculate the potential between current oxygen and all oxygen atoms after it
-            e_ijs_repulsive = self.__lj_a * inv_d6 ** 2
-            e_ijs_attractive = -self.__lj_b * inv_d6
-            e_ijs = e_ijs_repulsive + e_ijs_attractive
+            # Call the respective calculation function based on input specifications , i.e. either
+            # `self._calculate_lennard_jones` or `self._calculate_lennard_jones_switch`
+            f_ijs, e_ijs, smaller_d_c = self._func_calculate_lennard_jones(q_jsi, d_ijs)
+            # Add the calculated values to the corresponding attributes
             self._energy_lj += e_ijs.sum()
-            # Calculate the force on all oxygen atoms, using the calculated potential
-            f_ijs = (6 * (e_ijs + e_ijs_repulsive) * inv_d2).reshape(-1, 1) * q_jsi
             self._force_lj[idx_curr_atom] += f_ijs.sum(axis=0)
-            self._force_lj[idx_first_interacting_atom::3] += -f_ijs
+            self._force_lj[idx_first_interacting_atom::3][smaller_d_c] += -f_ijs
         return
+
+    def _calculate_lennard_jones_switch(
+        self, q_jsi: np.ndarray, d_ijs: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Calculate the truncated Lennard-Jones potential and forces, using a switch function.
+
+        Parameters
+        ----------
+        q_jsi : numpy.ndarray
+        d_ijs : numpy.ndarray
+
+        Returns
+        -------
+
+        """
+        f_ijs, e_ijs, smaller_d_c = force_terms.lennard_jones_switch(
+            q_jsi, d_ijs, self.__lj_a, self.__lj_b, self.__lj_d0, self.__lj_dc
+        )
+        return f_ijs, e_ijs, smaller_d_c
+
+    def _calculate_lennard_jones_full(
+        self, q_jsi: np.ndarray, d_ijs: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, None]:
+        """
+        Calculate the complete non-truncated Lennard-Jones potential and forces.
+
+        Parameters
+        ----------
+        q_jsi : numpy.ndarray
+        d_ijs : numpy.ndarray
+
+        Returns
+        -------
+
+        """
+        f_ijs, e_ijs = force_terms.lennard_jones(q_jsi, d_ijs, self.__lj_a, self.__lj_b)
+        return f_ijs, e_ijs, None
 
     def _update_bond_vibration(self) -> None:
         """
@@ -537,13 +569,10 @@ class Flexible3SiteSPC(ForceField):
             # as two single arrays
             q_jsi = self._distance_vectors[idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3]
             d_ijs = self._distances[idx_curr_atom, idx_curr_atom + 1 : idx_curr_atom + 3]
-            # Calculate common terms only once
-            delta_d_ijs = d_ijs - self.__d0
-            k__delta_d_ijs = self.__k_b * delta_d_ijs
-            # Calculate the potential of the whole molecule
-            self._energy_bond += (k__delta_d_ijs * delta_d_ijs / 2).sum()
-            # Calculate forces on each atom
-            f_ijs = (-k__delta_d_ijs / d_ijs).reshape(-1, 1) * q_jsi
+            # Calculate potentials and forces
+            f_ijs, e_ijs = force_terms.bond_vibration_harmonic(q_jsi, d_ijs, self.__d0, self.__k_b)
+            # Add the calculated values to the corresponding attributes
+            self._energy_bond += e_ijs.sum()
             self._force_bond[idx_curr_atom] = f_ijs.sum(axis=0)
             self._force_bond[idx_curr_atom + 1 : idx_curr_atom + 3] = -f_ijs
         return
@@ -577,26 +606,16 @@ class Flexible3SiteSPC(ForceField):
             q_jk = -self._distance_vectors[idx_curr_atom, idx_curr_atom + 2]
             d_ij = self._distances[idx_curr_atom, idx_curr_atom + 1]
             d_jk = self._distances[idx_curr_atom, idx_curr_atom + 2]
-            # Calculate common term
-            d_ij__d_jk = d_ij * d_jk
-            # Calculate the angle from the dot product formula
-            cos = np.dot(q_ji, q_jk) / d_ij__d_jk
-            angle = np.arccos(cos)
-            # Store the angle
+            # Calculate potentials and forces
+            f_i, f_j, f_k, e_ijk, angle = force_terms.angle_vibration_harmonic(
+                q_ji, q_jk, d_ij, d_jk, self.__angle0, self.__k_a
+            )
+            # Add the calculated values to the corresponding attributes
             self._angles[idx_curr_atom // 3] = angle
-            # Calculate common terms
-            delta_angle = angle - self.__angle0
-            a = self.__k_a * delta_angle / abs(np.sin(angle))
-            # Calculate the potential
-            self._energy_angle += 0.5 * self.__k_a * delta_angle ** 2
-            # Calculate force on first hydrogen
-            f_i = a * (q_jk / d_ij__d_jk - cos * q_ji / d_ij ** 2)
+            self._energy_angle += e_ijk
+            self._force_angle[idx_curr_atom] = f_j
             self._force_angle[idx_curr_atom + 1] = f_i
-            # Calculate force on second hydrogen
-            f_k = a * (q_ji / d_ij__d_jk - cos * q_jk / d_jk ** 2)
             self._force_angle[idx_curr_atom + 2] = f_k
-            # Calculate the force on oxygen
-            self._force_angle[idx_curr_atom] = -(f_i + f_k)
         return
 
     def __str__(self) -> str:
