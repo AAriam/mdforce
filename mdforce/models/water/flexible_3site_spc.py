@@ -457,16 +457,15 @@ class Flexible3SiteSPC(ForceField):
             # atoms after it, as two arrays
             q_jsi = self._distance_vectors[idx_curr_atom, idx_first_interacting_atom:]
             d_ijs = self._distances[idx_curr_atom, idx_first_interacting_atom:]
-            # Calculate the potential between current atom and all atoms after it
-            energy = (
+            # Calculate potentials and forces
+            f_ijs, e_ijs = force_terms.coulomb(
+                q_jsi,
+                d_ijs,
+                self.__c[idx_curr_atom] * self.__c[idx_first_interacting_atom:],
                 self.__k_e
-                * self.__c[idx_curr_atom]
-                * self.__c[idx_first_interacting_atom:]
-                / d_ijs
             )
-            self._energy_coulomb += energy.sum()
-            # Calculate the force on all atoms, using the calculated potential
-            f_ijs = (energy / d_ijs ** 2).reshape(-1, 1) * q_jsi
+            # Add the calculated values to the corresponding attributes
+            self._energy_coulomb += e_ijs.sum()
             self._force_coulomb[idx_curr_atom] += f_ijs.sum(axis=0)
             self._force_coulomb[idx_first_interacting_atom:] += -f_ijs
         return
