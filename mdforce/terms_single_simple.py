@@ -17,6 +17,9 @@ corresponding to the coordinates of the particle in x-, y- and z-directions.
 from typing import Tuple
 import math  # Used only in `angle_vibration_harmonic` to calculate arccosine and sine.
 
+# Self
+from . import distances
+
 
 def coulomb(
     q_i_x: float,
@@ -64,12 +67,10 @@ def coulomb(
     The force vector for particle 'j' due to particle 'i' is the same vector as the return value,
     only with opposite signs for all components, whereas the potential energy does not change.
     """
-    # Calculate distance vector
-    q_ji_x = q_i_x - q_j_x
-    q_ji_y = q_i_y - q_j_y
-    q_ji_z = q_i_z - q_j_z
-    # Calculate the norm of vector (i.e. distance)
-    d_ij = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
+    # Calculate the distance-vector components and the distance
+    q_ji_x, q_ji_y, q_ji_z, d_ij = distances.components_single_single(
+        q_i_x, q_i_y, q_i_z, q_j_x, q_j_y, q_j_z
+    )
     # Calculate potential
     e_ij = k_e * c_i * c_j / d_ij
     # Calculate the components of the force vector
@@ -124,12 +125,10 @@ def lennard_jones(
     The force vector for particle 'j' due to particle 'i' is the same vector as the return value,
     only with opposite signs for all components, whereas the potential energy does not change.
     """
-    # Calculate distance vector
-    q_ji_x = q_i_x - q_j_x
-    q_ji_y = q_i_y - q_j_y
-    q_ji_z = q_i_z - q_j_z
-    # Calculate the norm of vector (i.e. distance)
-    d_ij = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
+    # Calculate the distance-vector components and the distance
+    q_ji_x, q_ji_y, q_ji_z, d_ij = distances.components_single_single(
+        q_i_x, q_i_y, q_i_z, q_j_x, q_j_y, q_j_z
+    )
     # Calculate potential
     e_ij = (a_ij / d_ij ** 12) - (b_ij / d_ij ** 6)
     # Calculate the components of the force vector
@@ -185,12 +184,10 @@ def bond_vibration_harmonic(
     The force vector for particle 'j' due to particle 'i' is the same vector as the return value,
     only with opposite signs for all components, whereas the potential energy does not change.
     """
-    # Calculate distance vector
-    q_ji_x = q_i_x - q_j_x
-    q_ji_y = q_i_y - q_j_y
-    q_ji_z = q_i_z - q_j_z
-    # Calculate the norm of vector (i.e. distance)
-    d_ij = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
+    # Calculate the distance-vector components and the distance
+    q_ji_x, q_ji_y, q_ji_z, d_ij = distances.components_single_single(
+        q_i_x, q_i_y, q_i_z, q_j_x, q_j_y, q_j_z
+    )
     # Calculate potential
     e_ij = 0.5 * k_b * (d_ij - d0) ** 2
     # Calculate the components of the force vector
@@ -250,17 +247,14 @@ def angle_vibration_harmonic(
         Components of the force vector for particles 'i' 'j' and 'k', in x-, y- and z-directions,
         respectively, followed by the potential energy between the three particles.
     """
-    # Calculate distance vector between 'j' and 'i'
-    q_ji_x = q_i_x - q_j_x
-    q_ji_y = q_i_y - q_j_y
-    q_ji_z = q_i_z - q_j_z
-    # Calculate distance vector between 'j' and 'k'
-    q_jk_x = q_k_x - q_j_x
-    q_jk_y = q_k_y - q_j_y
-    q_jk_z = q_k_z - q_j_z
-    # Calculate the norm of vectors (i.e. distances)
-    d_ij = (q_ji_x ** 2 + q_ji_y ** 2 + q_ji_z ** 2) ** 0.5
-    d_jk = (q_jk_x ** 2 + q_jk_y ** 2 + q_jk_z ** 2) ** 0.5
+    # Calculate the distance-vector components and the distance between 'j' and 'i'
+    q_ji_x, q_ji_y, q_ji_z, d_ij = distances.components_single_single(
+        q_i_x, q_i_y, q_i_z, q_j_x, q_j_y, q_j_z
+    )
+    # Calculate the distance-vector components and the distance between 'j' and 'k'
+    q_jk_x, q_jk_y, q_jk_z, d_jk = distances.components_single_single(
+        q_k_x, q_k_y, q_k_z, q_j_x, q_j_y, q_j_z
+    )
     # Calculate cosine of angle using the dot product formula
     cos = ((q_ji_x * q_jk_x) + (q_ji_y * q_jk_y) + (q_ji_z * q_jk_z)) / (d_ij * d_jk)
     # Raise error if cosine is not withing the range (-1, 1)
