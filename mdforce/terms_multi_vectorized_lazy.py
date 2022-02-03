@@ -10,8 +10,17 @@ import numpy as np
 from . import switch_functions as switch
 
 
-def coulomb():
-    pass
+def coulomb(
+        q_jsi: np.ndarray,
+        d_ijs: np.ndarray,
+        c_ijs: Union[np.ndarray, float],
+        k_e: float,
+) -> Tuple[np.ndarray, np.ndarray]:
+    # Calculate potentials
+    e_ijs = k_e * c_ijs / d_ijs
+    # Calculate forces
+    f_ijs = (e_ijs / d_ijs ** 2).reshape(-1, 1) * q_jsi
+    return f_ijs, e_ijs
 
 
 def lennard_jones(
@@ -61,26 +70,26 @@ def lennard_jones_switch(
 def bond_vibration_harmonic(
         q_jsi: np.ndarray,
         d_ijs: np.ndarray,
-        d0: float,
-        k_b: float
+        d0_ijs: float,
+        k_b_ijs: float
 ) -> Tuple[np.ndarray, np.ndarray]:
     # Calculate common terms only once
-    delta_d_ijs = d_ijs - d0
-    k__delta_d_ijs = k_b * delta_d_ijs
-    # Calculate the potential of the whole molecule
-    e_ijs = (k__delta_d_ijs * delta_d_ijs / 2).sum()
+    delta_d_ijs = d_ijs - d0_ijs
+    k__delta_d_ijs = k_b_ijs * delta_d_ijs
+    # Calculate potentials
+    e_ijs = k__delta_d_ijs * delta_d_ijs / 2
     # Calculate forces on each atom
     f_ijs = (-k__delta_d_ijs / d_ijs).reshape(-1, 1) * q_jsi
     return f_ijs, e_ijs
 
 
 def angle_vibration_harmonic(
-        q_ji,
-        q_jk,
-        d_ij,
-        d_jk,
-        angle0,
-        k_a,
+        q_ji: np.ndarray,
+        q_jk: np.ndarray,
+        d_ij: float,
+        d_jk: float,
+        angle0: float,
+        k_a: float,
 ):
     # Calculate common term
     d_ij__d_jk = d_ij * d_jk
