@@ -18,6 +18,9 @@ from typing import Tuple
 # 3rd-party
 import numpy as np
 
+# Self
+from . import distances
+
 
 def coulomb(
     q_i: np.ndarray, q_j: np.ndarray, c_i: float, c_j: float, k_e: float
@@ -51,10 +54,8 @@ def coulomb(
     The force vector for particle 'j' due to particle 'i' will be the same vector as the return
     value, only with opposite sign, whereas the potential will not change.
     """
-    # Calculate distance vector
-    q_ji = q_i - q_j
-    # Calculate the norm of vector (i.e. distance)
-    d_ij = np.linalg.norm(q_ji)
+    # Calculate distance vector and its norm (i.e. distance)
+    q_ji, d_ij = distances.two_arrays(q_i, q_j)
     # Calculate potential
     e_ij = k_e * c_i * c_j / d_ij
     # Calculate force
@@ -93,10 +94,8 @@ def lennard_jones(
     The force vector for particle 'j' due to particle 'i' will be the same vector as the return
     value, only with opposite sign, whereas the potential will not change.
     """
-    # Calculate distance vector
-    q_ji = q_i - q_j
-    # Calculate the norm of vector (i.e. distance)
-    d_ij = np.linalg.norm(q_ji)
+    # Calculate distance vector and its norm (i.e. distance)
+    q_ji, d_ij = distances.two_arrays(q_i, q_j)
     # calculate common terms
     inv_d2 = 1 / d_ij ** 2
     inv_d6 = inv_d2 ** 3
@@ -140,10 +139,8 @@ def bond_vibration_harmonic(
     The force vector for particle 'j' due to particle 'i' will be the same vector as the return
     value, only with opposite sign, whereas the potential will not change.
     """
-    # Calculate distance vector
-    q_ji = q_i - q_j
-    # Calculate the norm of vector (i.e. distance)
-    d_ij = np.linalg.norm(q_ji)
+    # Calculate distance vector and its norm (i.e. distance)
+    q_ji, d_ij = distances.two_arrays(q_i, q_j)
     # Calculate common terms
     delta_d = d_ij - d0
     k__delta_d = k_b * delta_d
@@ -184,12 +181,9 @@ def angle_vibration_harmonic(
         Force vector for each of the three particles in the order (i, j, k), followed by potential
         energy between the three particles.
     """
-    # Calculate distance vectors
-    q_ji = q_i - q_j
-    q_jk = q_k - q_j
-    # Calculate the norm of vectors (i.e. distances)
-    d_ij = np.linalg.norm(q_ji)
-    d_jk = np.linalg.norm(q_jk)
+    # Calculate distance vectors and their norms (i.e. distances)
+    q_ji, d_ij = distances.two_arrays(q_i, q_j)
+    q_jk, d_jk = distances.two_arrays(q_k, q_j)
     # Calculate common term
     d_ij__d_jk = d_ij * d_jk
     # Calculate cosine of angle using the dot product formula
