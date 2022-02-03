@@ -18,6 +18,10 @@ from typing import Tuple
 # 3rd-party
 import numpy as np
 
+# Self
+from . import terms_multi_vectorized_lazy as terms_lazy
+from . import distances
+
 
 def coulomb(
     q_i: np.ndarray, q_js: np.ndarray, c_i: float, c_js: np.ndarray, k_e: float
@@ -53,14 +57,10 @@ def coulomb(
         e_ijs: Potential energy between 'i' and each particle in 'js', as a 1D-array of shape
         (n, ).
     """
-    # Calculate distance vectors
-    q_jsi = q_i - q_js
-    # Calculate the norm of vectors (i.e. distances)
-    d_ijs = np.linalg.norm(q_jsi, axis=1)
-    # Calculate potentials
-    e_ijs = k_e * c_i * c_js / d_ijs
-    # Calculate forces
-    f_ijs = (e_ijs / d_ijs ** 2).reshape(-1, 1) * q_jsi
+    # Calculate distance vectors and their norms (i.e. distances)
+    q_jsi, d_ijs = distances.two_arrays(q_i, q_js)
+    # Calculate forces and potentials
+    f_ijs, e_ijs = terms_lazy.coulomb(q_jsi, d_ijs, c_i * c_js, k_e)
     return f_ijs.sum(axis=0), -f_ijs, e_ijs
 
 
@@ -99,19 +99,10 @@ def lennard_jones(
         e_ijs: Potential energy between 'i' and each particle in 'js', as a 1D-array of shape
         (n, ).
     """
-    # Calculate distance vectors
-    q_jsi = q_i - q_js
-    # Calculate the norm of vectors (i.e. distances)
-    d_ijs = np.linalg.norm(q_jsi, axis=1)
-    # Calculate common terms
-    inv_d_2 = 1 / d_ijs ** 2
-    inv_d_6 = inv_d_2 ** 3
-    # Calculate potentials
-    e_ijs_repulsive = a_ijs * inv_d_6 ** 2
-    e_ijs_attractive = -b_ijs * inv_d_6
-    e_ijs = e_ijs_repulsive + e_ijs_attractive
-    # Calculate forces
-    f_ijs = (6 * (e_ijs + e_ijs_repulsive) * inv_d_2).reshape(-1, 1) * q_jsi
+    # Calculate distance vectors and their norms (i.e. distances)
+    q_jsi, d_ijs = distances.two_arrays(q_i, q_js)
+    # Calculate forces and potentials
+    f_ijs, e_ijs = terms_lazy.lennard_jones(q_jsi, d_ijs, a_ijs, b_ijs)
     return f_ijs.sum(axis=0), -f_ijs, e_ijs
 
 
@@ -150,18 +141,11 @@ def bond_vibration_harmonic(
         pot_ijs: Potential energy between 'i' and each particle in 'js', as a 1D-array of shape
         (n, ).
     """
-    # Calculate distance vectors
-    q_jsi = q_i - q_js
-    # Calculate the norm of vectors (i.e. distances)
-    d_ijs = np.linalg.norm(q_jsi, axis=1)
-    # Calculate common terms
-    delta_d_ijs = d_ijs - d0_ijs
-    k__delta_d_ijs = k_b_ijs * delta_d_ijs
-    # Calculate potentials
-    pot_ijs = k__delta_d_ijs * delta_d_ijs / 2
-    # Calculate forces
-    f_ijs = (-k__delta_d_ijs / d_ijs).reshape(-1, 1) * q_jsi
-    return f_ijs.sum(axis=0), -f_ijs, pot_ijs
+    # Calculate distance vectors and their norms (i.e. distances)
+    q_jsi, d_ijs = distances.two_arrays(q_i, q_js)
+    # Calculate forces and potentials
+    f_ijs, e_ijs = terms_lazy.bond_vibration_harmonic(q_jsi, d_ijs, d0_ijs, k_b_ijs)
+    return f_ijs.sum(axis=0), -f_ijs, e_ijs
 
 
 def angle_vibration_harmonic(
