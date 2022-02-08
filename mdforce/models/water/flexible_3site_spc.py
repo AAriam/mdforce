@@ -376,33 +376,33 @@ class Flexible3SiteSPC(ForceField):
             self._unit_length = helpers.convert_to_unit(unit_length, "length", "unit_length")
             self._unit_time = helpers.convert_to_unit(unit_time, "time", "unit_time")
         # Calculate and verify general units
-        self._unit_force = self._unit_mass * self._unit_length / self._unit_time ** 2
+        self._unit_force = param_data.unit_mass * self._unit_length / self._unit_time ** 2
         helpers.raise_for_dimension(self._unit_force, "force", "_unit_force")
         self._unit_energy = self._unit_force * self._unit_length
         helpers.raise_for_dimension(self._unit_energy, "energy", "_unit_energy")
         # Convert bond vibration units
         unit_bond_k = self._unit_energy / self._unit_length ** 2
-        helpers.raise_for_dimension(unit_bond_k, self._dim_k_b, "unit_bond_k")
+        helpers.raise_for_dimension(unit_bond_k, param_data.dim_k_b, "unit_bond_k")
         self._k_b_conv = self._k_b.convert_unit(unit_bond_k)
         self._d0_conv = self._d0.convert_unit(self._unit_length)
         # Convert angle vibration units
-        unit_angle_k = self._unit_energy / self._unit_angle ** 2
-        helpers.raise_for_dimension(unit_angle_k, self._dim_k_a, "unit_angle_k")
-        self._k_a_conv = self._k_a.convert_unit(unit_angle_k)
-        self._angle0_conv = self._angle0.convert_unit(self._unit_angle)
+        unit_k_a = self._unit_energy / param_data.unit_angle ** 2
+        helpers.raise_for_dimension(unit_k_a, param_data.dim_k_a, "unit_k_a")
+        self._k_a_conv = self._k_a.convert_unit(unit_k_a)
+        self._angle0_conv = self._angle0.convert_unit(param_data.unit_angle)
         # Convert Lennard-Jones units
         self._lj_sigma_conv = self._lj_sigma.convert_unit(self._unit_length)
         self._lj_epsilon_conv = self._lj_epsilon.convert_unit(self._unit_energy)
         self._lj_a_conv = self._lj_a.convert_unit(self._unit_energy * self._unit_length ** 12)
-        helpers.raise_for_dimension(self._lj_a_conv, self._dim_lj_a, "_lj_a_converted")
+        helpers.raise_for_dimension(self._lj_a_conv, param_data.dim_lj_a, "_lj_a_converted")
         self._lj_b_conv = self._lj_b.convert_unit(self._unit_energy * self._unit_length ** 6)
-        helpers.raise_for_dimension(self._lj_b_conv, self._dim_lj_b, "_lj_b_converted")
+        helpers.raise_for_dimension(self._lj_b_conv, param_data.dim_lj_b, "_lj_b_converted")
         # Convert coulomb units
-        unit_k_e = self._unit_energy * self._unit_length / self._unit_charge ** 2
-        helpers.raise_for_dimension(unit_k_e, self._dim_k_e, "unit_k_e")
+        unit_k_e = self._unit_energy * self._unit_length / param_data.unit_charge ** 2
+        helpers.raise_for_dimension(unit_k_e, param_data.dim_k_e, "unit_k_e")
         self._k_e_conv = self._k_e.convert_unit(unit_k_e)
-        self._c_o_conv = self._c_o.convert_unit(self._unit_charge)
-        self._c_h_conv = self._c_h.convert_unit(self._unit_charge)
+        self._c_o_conv = self._c_o.convert_unit(param_data.unit_charge)
+        self._c_h_conv = self._c_h.convert_unit(param_data.unit_charge)
         # Assign numerical values of converted units to attributes used in force functions
         self.__k_b = self._k_b_conv.value
         self.__d0 = self._d0_conv.value
