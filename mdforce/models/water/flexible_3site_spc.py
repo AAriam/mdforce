@@ -278,35 +278,30 @@ class Flexible3SiteSPC(ForceField):
             self._lj_epsilon, self._lj_sigma
         )
         # Attributes that are set after calling `fit_units_to_input_data`
-        self._k_b_conv = None
-        self._d0_conv = None
-        self._k_a_conv = None
-        self._angle0_conv = None
-        self._lj_epsilon_conv = None
-        self._lj_sigma_conv = None
-        self._lj_a_conv = None
-        self._lj_b_conv = None
-        self._c_o_conv = None
-        self._c_h_conv = None
-        self._k_e_conv = None
-        self._unit_length = None
-        self._unit_time = None
-        self._unit_force = None
-        self._unit_energy = None
-        self._fitted = False  # Whether the model has been fitted to input data.
+        self._k_b_conv: duq.Quantity = None
+        self._d0_conv: duq.Quantity = None
+        self._k_a_conv: duq.Quantity = None
+        self._angle0_conv: duq.Quantity = None
+        self._lj_epsilon_conv: duq.Quantity = None
+        self._lj_sigma_conv: duq.Quantity = None
+        self._lj_a_conv: duq.Quantity = None
+        self._lj_b_conv: duq.Quantity = None
+        self._c_o_conv: duq.Quantity = None
+        self._c_h_conv: duq.Quantity = None
+        self._k_e_conv: duq.Quantity = None
         # Attributes holding numerical values of all parameters
         # If parameters were inputted as pure numbers, these are then directly set here,
         # otherwise they are set after calling the `fit_units_to_input_data` method.
-        self.__k_b = self._k_b if self._unitless else None
-        self.__d0 = self._d0 if self._unitless else None
-        self.__k_a = self._k_a if self._unitless else None
-        self.__angle0 = self._angle0 if self._unitless else None
-        self.__lj_a = self._lj_a if self._unitless else None
-        self.__lj_b = self._lj_b if self._unitless else None
-        self.__k_e = self._k_e if self._unitless else None
-        self.__m_o = self._m_o if self._unitless else None
-        self.__m_h = self._m_h if self._unitless else None
-        self.__c = None  # This cannot be set now because number of atoms is needed
+        self.__k_b: float = self._k_b if self._unitless else None
+        self.__d0: float = self._d0 if self._unitless else None
+        self.__k_a: float = self._k_a if self._unitless else None
+        self.__angle0: float = self._angle0 if self._unitless else None
+        self.__lj_a: float = self._lj_a if self._unitless else None
+        self.__lj_b: float = self._lj_b if self._unitless else None
+        self.__k_e: float = self._k_e if self._unitless else None
+        self.__m_o: float = self._m_o if self._unitless else None
+        self.__m_h: float = self._m_h if self._unitless else None
+        self.__c: np.ndarray = None  # This cannot be set now because number of atoms is needed
         return
 
     def initialize_forcefield(

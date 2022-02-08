@@ -88,33 +88,32 @@ class ForceField:
 
     def __init__(self):
         # Attributes for storing the data after each force-field update
-        self._acceleration = None
-        self._force_total = None
-        self._force_coulomb = None
-        self._force_lj = None
-        self._force_bond = None
-        self._force_angle = None
-        self._distances = None
-        self._distance_vectors = None
-        self._angles = None
-        self._energy_coulomb = 0
-        self._energy_lj = 0
-        self._energy_bond = 0
-        self._energy_angle = 0
+        self._acceleration: np.ndarray = None
+        self._force_total: np.ndarray = None
+        self._force_coulomb: np.ndarray = None
+        self._force_lj: np.ndarray = None
+        self._force_bond: np.ndarray = None
+        self._force_angle: np.ndarray = None
+        self._distances: np.ndarray = None
+        self._distance_vectors: np.ndarray = None
+        self._angles: np.ndarray = None
+        self._energy_coulomb: float = None
+        self._energy_lj: float = None
+        self._energy_bond: float = None
+        self._energy_angle: float = None
         # Attributes that are set after calling `initialize_forcefield`
-        self._num_molecules = None
-        self._num_atoms = None
-        self._pbc_box_lengths = None
-        self._func_update_distances = None
-        self._func_update_lennard_jones = None
-        self._func_update_coulomb = None
-        # Attributes that are only set when instantiating from alternative constructor `from_model`
-        self._model_name = None
-        self._model_description = None
-        self._model_ref_name = None
-        self._model_ref_cite = None
-        self._model_ref_link = None
-        return
+        self._num_molecules: int = None
+        self._num_atoms: int = None
+        self._pbc_box_lengths: np.ndarray = None
+        self._func_update_distances: Callable = None
+        self._func_calculate_lennard_jones: Callable = None
+        self._func_calculate_coulomb: Callable = None
+        # Attributes that are set after calling `fit_units_to_input_data`
+        self._unit_length: duq.Unit = None
+        self._unit_time: duq.Unit = None
+        self._unit_force: duq.Unit = None
+        self._unit_energy: duq.Unit = None
+        self._fitted: bool = False  # Whether the model has been fitted to input data.
 
     @property
     def acceleration(self) -> np.ndarray:
@@ -336,6 +335,11 @@ class ForceField:
         self._distance_vectors = np.zeros((self._num_atoms, *shape_data))
         self._angles = np.zeros(self._num_molecules)
         self._idx_first_long_range_interacting_atom = np.zeros(self._num_atoms - 3, dtype=int)
+        self._model_name: str = None
+        self._model_description: str = None
+        self._model_ref_name: str = None
+        self._model_ref_cite: str = None
+        self._model_ref_link: str = None
         return
 
     @property
