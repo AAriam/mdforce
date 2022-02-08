@@ -3,13 +3,35 @@ Module containing classes representing switch functions for truncating short-ran
 """
 
 # Standard library
-from typing import Union, Tuple
+from typing import Tuple
 
 # 3rd-party packages
 import numpy as np
 
 
-class Poly1:
+class SwitchFunction:
+    """
+    Superclass for all switch function classes.
+    """
+    def __init__(self, distance_start: float, distance_end: float):
+        self._d0 = distance_start
+        self._dc = distance_end
+        # Calculate recurring terms to use in each call
+        return
+
+    def __call__(self, q_jsi: np.ndarray, d_ijs: np.ndarray):
+        pass
+
+    @property
+    def d0(self):
+        return self._d0
+
+    @property
+    def dc(self):
+        return self._dc
+
+
+class Poly1(SwitchFunction):
     """
     Polynomial switch function S(r) with the formula
     S(r) = 1 + [(r^2 - a^2) / (b^2 - a^2)]^2 [2((r^2 - a^2) / (b^2 - a^2)) - 3]
@@ -19,8 +41,7 @@ class Poly1:
 
     """
     def __init__(self, distance_start: float, distance_end: float):
-        self._d0 = distance_start
-        self._dc = distance_end
+        super().__init__(distance_start, distance_end)
         # Calculate recurring terms to use in each call
         self._d0_2 = self._d0 ** 2
         self._dc_2 = self._dc ** 2
