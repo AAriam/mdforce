@@ -408,6 +408,31 @@ class ForceField:
     def unit_time(self) -> duq.Unit:
         return self._unit_time
 
+    def fit_units_to_input_data(
+        self,
+        unit_length: Union[str, duq.Unit],
+        unit_time: Union[str, duq.Unit],
+    ) -> None:
+        """
+        Make the force-field parameters' units compatible to those of the input data.
+        This is only applicable when the force-field parameters are not inputted as pure numbers.
+
+        Parameters
+        ----------
+        unit_length : Union[str, duq.Unit]
+            Unit of length used in the data (i.e. positions and velocities), either as a `duq.Unit`
+            object or a string representation of the unit, e.g. "Å".
+        unit_time : Union[str, duq.Unit]
+            Unit of time used in the data (i.e. velocities) and in the integrator, either as a
+            `duq.Unit` object or a string representation of the unit, e.g. "Å".
+
+        Returns
+        -------
+            None
+            All force-field parameters are converted to be compatible with the given units.
+        """
+        pass
+
     def _initialize_output_arrays(self, shape_data) -> None:
         """
         Prepare the force-field for a specific shape of input coordinates. This is necessary to
