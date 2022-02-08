@@ -178,37 +178,6 @@ class ForceField:
         # Do other preparations specific to the force-field
         return
 
-    def _initialize_output_arrays(self, shape_data) -> None:
-        """
-        Prepare the force-field for a specific shape of input coordinates. This is necessary to
-        determine the shape of arrays that are used to store the output data after each force
-        evaluation, since these arrays are only created once and then overwritten after each
-        re-evaluation.
-
-        Parameters
-        ----------
-        shape_data : Tuple(int, int)
-            Shape of the array of positions, where the first value is the number of atoms (should
-            be a multiple of 3), and the second value is the number of spatial dimensions of the
-            coordinates of each atom.
-
-        Returns
-        -------
-            None
-            Arrays for storing the force-field evaluation results are initialized with the
-            correct shape.
-        """
-        # Initialize output arrays with the right shape
-        self._acceleration = np.zeros(shape_data)
-        self._force_total = np.zeros(shape_data)
-        self._force_coulomb = np.zeros(shape_data)
-        self._force_lj = np.zeros(shape_data)
-        self._force_bond = np.zeros(shape_data)
-        self._force_angle = np.zeros(shape_data)
-        self._distances = np.zeros((self._num_atoms, self._num_atoms))
-        self._distance_vectors = np.zeros((self._num_atoms, *shape_data))
-        self._angles = np.zeros(self._num_molecules)
-        self._idx_first_long_range_interacting_atom = np.zeros(self._num_atoms - 3, dtype=int)
         self._model_name: str = None
         self._model_description: str = None
         self._model_ref_name: str = None
@@ -438,6 +407,37 @@ class ForceField:
     @property
     def unit_time(self) -> duq.Unit:
         return self._unit_time
+
+    def _initialize_output_arrays(self, shape_data) -> None:
+        """
+        Prepare the force-field for a specific shape of input coordinates. This is necessary to
+        determine the shape of arrays that are used to store the output data after each force
+        evaluation, since these arrays are only created once and then overwritten after each
+        re-evaluation.
+
+        Parameters
+        ----------
+        shape_data : Tuple(int, int)
+            Shape of the array of positions, where the first value is the number of atoms (should
+            be a multiple of 3), and the second value is the number of spatial dimensions of the
+            coordinates of each atom.
+
+        Returns
+        -------
+            None
+            Arrays for storing the force-field evaluation results are initialized with the
+            correct shape.
+        """
+        # Initialize output arrays with the right shape
+        self._acceleration = np.zeros(shape_data)
+        self._force_total = np.zeros(shape_data)
+        self._force_coulomb = np.zeros(shape_data)
+        self._force_lj = np.zeros(shape_data)
+        self._force_bond = np.zeros(shape_data)
+        self._force_angle = np.zeros(shape_data)
+        self._angles = np.zeros(self._num_molecules)
+        self._indices_first_long_range_interacting_atom = np.zeros(self._num_atoms - 3, dtype=int)
+        return
 
     def _update_distances(self, positions: np.ndarray) -> None:
         """
