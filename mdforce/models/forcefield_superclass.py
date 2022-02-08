@@ -122,58 +122,6 @@ class ForceField:
         self._unit_energy: duq.Unit = None
         self._fitted: bool = False  # Whether the model has been fitted to input data.
 
-    @property
-    def acceleration(self) -> np.ndarray:
-        return self._acceleration
-
-    @property
-    def force_total(self) -> np.ndarray:
-        return self._force_total
-
-    @property
-    def force_coulomb(self):
-        return self._force_coulomb
-
-    @property
-    def force_lennard_jones(self):
-        return self._force_lj
-
-    @property
-    def force_bond_vibration(self):
-        return self._force_bond
-
-    @property
-    def force_angle_vibration(self):
-        return self._force_angle
-
-    @property
-    def energy_coulomb(self) -> float:
-        return self._energy_coulomb
-
-    @property
-    def energy_lennard_jones(self) -> float:
-        return self._energy_lj
-
-    @property
-    def energy_bond_vibration(self) -> float:
-        return self._energy_bond
-
-    @property
-    def energy_angle_vibration(self) -> float:
-        return self._energy_angle
-
-    @property
-    def distances(self) -> np.ndarray:
-        return self._distances
-
-    @property
-    def distance_vectors(self) -> np.ndarray:
-        return self._distance_vectors
-
-    @property
-    def bond_angles(self) -> np.ndarray:
-        return self._angles
-
     def __call__(self, positions: np.ndarray) -> None:
         self._func_update_distances(positions)
         self._update_forces_energies()
@@ -503,6 +451,106 @@ class ForceField:
         self._raise_for_model()
         webbrowser.open_new(self._model_ref_link)
         return
+
+    @property
+    def acceleration(self) -> np.ndarray:
+        return self._acceleration
+
+    @property
+    def force_total(self) -> np.ndarray:
+        return self._force_total
+
+    @property
+    def force_coulomb(self):
+        return self._force_coulomb
+
+    @property
+    def force_lennard_jones(self):
+        return self._force_lj
+
+    @property
+    def force_bond_vibration(self):
+        return self._force_bond
+
+    @property
+    def force_angle_vibration(self):
+        return self._force_angle
+
+    @property
+    def energy_coulomb(self) -> float:
+        return self._energy_coulomb
+
+    @property
+    def energy_lennard_jones(self) -> float:
+        return self._energy_lj
+
+    @property
+    def energy_bond_vibration(self) -> float:
+        return self._energy_bond
+
+    @property
+    def energy_angle_vibration(self) -> float:
+        return self._energy_angle
+
+    @property
+    def distances(self) -> np.ndarray:
+        return self._distances
+
+    @property
+    def distance_vectors(self) -> np.ndarray:
+        return self._distance_vectors
+
+    @property
+    def bond_angles(self) -> np.ndarray:
+        return self._angles
+
+    @property
+    def unit_energy(self) -> duq.Unit:
+        return self._unit_energy
+
+    @property
+    def unit_length(self) -> duq.Unit:
+        return self._unit_length
+
+    @property
+    def unit_angle(self) -> duq.Unit:
+        return param_data.unit_angle
+
+    @property
+    def unit_time(self) -> duq.Unit:
+        return self._unit_time
+
+
+    def _update_acceleration(self) -> None:
+        pass
+
+    def _update_coulomb(self) -> None:
+        pass
+
+    def _update_coulomb_pbc_ewald(self) -> None:
+        pass
+
+    def _update_coulomb_pbc_mesh_ewald(self) -> None:
+        pass
+
+    def _update_lennard_jones(self) -> None:
+        pass
+
+    def _calculate_lennard_jones_switch(
+            self, q_jsi: np.ndarray, d_ijs: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        pass
+
+    def _calculate_lennard_jones_full(
+            self, q_jsi: np.ndarray, d_ijs: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        pass
+
+    def _update_bond_vibration(self) -> None:
+        pass
+
+    def _update_angle_vibration(self) -> None:
+        pass
 
     def _raise_for_model(self) -> None:
         """
