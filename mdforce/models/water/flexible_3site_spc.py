@@ -71,12 +71,6 @@ class Flexible3SiteSPC(ForceField):
         "__m_o",
         "_m_h",
         "__m_h",
-        "_unitless",
-        "_fitted",
-        "_unit_length",
-        "_unit_time",
-        "_unit_force",
-        "_unit_energy",
     )
 
     # -- Setting class attributes --

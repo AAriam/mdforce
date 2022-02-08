@@ -33,7 +33,7 @@ class ForceField:
         "_energy_lj",
         "_energy_bond",
         "_energy_angle",
-        "_idx_first_long_range_interacting_atom",
+        "_indices_first_long_range_interacting_atom",
         "_num_atoms",
         "_num_molecules",
         "_model_name",
@@ -43,8 +43,14 @@ class ForceField:
         "_model_ref_link",
         "_pbc_box_lengths",
         "_func_update_distances",
-        "_func_update_lennard_jones",
-        "_func_update_coulomb",
+        "_func_calculate_lennard_jones",
+        "_func_calculate_coulomb",
+        "_fitted",
+        "_unit_length",
+        "_unit_time",
+        "_unit_force",
+        "_unit_energy",
+        "_unitless",
     )
 
     # Pandas Dataframe containing several sets of parameters for the model.
@@ -87,6 +93,7 @@ class ForceField:
         pass
 
     def __init__(self):
+        self._unitless: bool = None
         # Attributes for storing the data after each force-field update
         self._acceleration: np.ndarray = None
         self._force_total: np.ndarray = None
