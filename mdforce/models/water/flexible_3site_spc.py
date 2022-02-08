@@ -259,6 +259,58 @@ class Flexible3SiteSPC(ForceField):
         self.__c: np.ndarray = None  # This cannot be set now because number of atoms is needed
         return
 
+    def __str__(self) -> str:
+        """
+        String representation of the force-field, containing information on the model (in case
+        the force-field was instantiated using the alternative constructor method `from_model`),
+        and all model-parameters in their given units, and (when the model has already been fitted
+        to input data) the fitted units.
+        """
+        str_repr = (
+            (
+                f"Model Metadata:\n--------------\n{self.model_metadata}\n\n"
+                if self._model_name is not None
+                else ""
+            )
+            + f"Model Parameters:\n----------------\n"
+            + (
+                (
+                    "(parameters have not yet been converted into the units of input data)\n"
+                    if not self._fitted
+                    else "(with converted values fitted to input data in parenthesis)\n"
+                )
+                if not self._unitless
+                else "(parameters have been inputted without units)"
+            )
+            + self.model_parameters
+        )
+        return str_repr
+
+    @property
+    def model_parameters(self):
+        # Read general parameter-descriptions from dataframe
+        d, p = ("Description", "Parameters")
+        descriptions = {
+            "k_b": f"{self._dataframe.loc[d, (p, 'Bond vibration', 'k')]} (k_b)",
+            "d0": f"{self._dataframe.loc[d, (p, 'Bond vibration', 'r_OH')]} (r_OH)",
+            "k_a": f"{self._dataframe.loc[d, (p, 'Angle vibration', 'k')]} (k_a)",
+            "angle0": f"{self._dataframe.loc[d, (p, 'Angle vibration', 'θ_HOH')]} (θ_HOH)",
+            "lj_epsilon": f"{self._dataframe.loc[d, (p, 'Lennard-Jones', 'ε_OO')]} (ε_OO)",
+            "lj_sigma": f"{self._dataframe.loc[d, (p, 'Lennard-Jones', 'σ_OO')]} (σ_OO)",
+            "lj_a": "Lennard-Jones parameter A",
+            "lj_b": "Lennard-Jones parameter B",
+            "c_o": f"{self._dataframe.loc[d, (p, 'Coulomb', 'q_O')]} (q_O)",
+            "c_h": f"{self._dataframe.loc[d, (p, 'Coulomb', 'q_H')]} (q_H)",
+        }
+        str_repr = ""
+        for var_name, desc in descriptions.items():
+            var = getattr(self, f"_{var_name}")
+            var_conv = getattr(self, f"_{var_name}_conv") if self._fitted else None
+            str_repr += f"{desc}: {var if self._unitless else var.str_repr_short}" + (
+                f" (converted: {var_conv.str_repr_short})\n" if self._fitted else "\n"
+            )
+        return str_repr
+
     def initialize_forcefield(
         self, shape_data: Tuple[int, int], pbc_cell_lengths: np.ndarray = None
     ) -> None:
@@ -568,55 +620,3 @@ class Flexible3SiteSPC(ForceField):
             self._force_angle[idx_curr_atom + 1] = f_i
             self._force_angle[idx_curr_atom + 2] = f_k
         return
-
-    def __str__(self) -> str:
-        """
-        String representation of the force-field, containing information on the model (in case
-        the force-field was instantiated using the alternative constructor method `from_model`),
-        and all model-parameters in their given units, and (when the model has already been fitted
-        to input data) the fitted units.
-        """
-        str_repr = (
-            (
-                f"Model Metadata:\n--------------\n{self.model_metadata}\n\n"
-                if self._model_name is not None
-                else ""
-            )
-            + f"Model Parameters:\n----------------\n"
-            + (
-                (
-                    "(parameters have not yet been converted into the units of input data)\n"
-                    if not self._fitted
-                    else "(with converted values fitted to input data in parenthesis)\n"
-                )
-                if not self._unitless
-                else "(parameters have been inputted without units)"
-            )
-            + self.model_parameters
-        )
-        return str_repr
-
-    @property
-    def model_parameters(self):
-        # Read general parameter-descriptions from dataframe
-        d, p = ("Description", "Parameters")
-        descriptions = {
-            "k_b": f"{self._dataframe.loc[d, (p, 'Bond vibration', 'k')]} (k_b)",
-            "d0": f"{self._dataframe.loc[d, (p, 'Bond vibration', 'r_OH')]} (r_OH)",
-            "k_a": f"{self._dataframe.loc[d, (p, 'Angle vibration', 'k')]} (k_a)",
-            "angle0": f"{self._dataframe.loc[d, (p, 'Angle vibration', 'θ_HOH')]} (θ_HOH)",
-            "lj_epsilon": f"{self._dataframe.loc[d, (p, 'Lennard-Jones', 'ε_OO')]} (ε_OO)",
-            "lj_sigma": f"{self._dataframe.loc[d, (p, 'Lennard-Jones', 'σ_OO')]} (σ_OO)",
-            "lj_a": "Lennard-Jones parameter A",
-            "lj_b": "Lennard-Jones parameter B",
-            "c_o": f"{self._dataframe.loc[d, (p, 'Coulomb', 'q_O')]} (q_O)",
-            "c_h": f"{self._dataframe.loc[d, (p, 'Coulomb', 'q_H')]} (q_H)",
-        }
-        str_repr = ""
-        for var_name, desc in descriptions.items():
-            var = getattr(self, f"_{var_name}")
-            var_conv = getattr(self, f"_{var_name}_conv") if self._fitted else None
-            str_repr += f"{desc}: {var if self._unitless else var.str_repr_short}" + (
-                f" (converted: {var_conv.str_repr_short})\n" if self._fitted else "\n"
-            )
-        return str_repr
