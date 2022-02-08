@@ -3,11 +3,14 @@ Helper functions used by all models.
 """
 
 # Standard library
-from typing import Sequence, Union
+from typing import Sequence, Union, Tuple
 
 # 3rd-party packages
 import numpy as np
 import duq
+
+# Self
+from .data import param_data
 
 
 def raise_for_input_criteria(
@@ -208,3 +211,33 @@ def raise_for_dimension(
             f"{correct_dimension.symbol_as_is}, but has {unit_or_quantity.dimension.symbol_as_is}."
         )
     return
+
+
+def calculate_lennard_jones_params_a_b(
+    lj_epsilon: Union[float, duq.Quantity], lj_sigma: Union[float, duq.Quantity]
+) -> Tuple[Union[float, duq.Quantity], Union[float, duq.Quantity]]:
+    """
+    Calculate the Lennard-Jones parameters A and B, from epsilon and sigma.
+
+    Parameters
+    ----------
+    lj_epsilon : Union[float, duq.Quantity]
+        Lennard-Jones dispersion energy (ε), i.e. depth of the potential well.
+    lj_sigma : Union[float, duq.Quantity]
+        Lennard-Jones size of the particle (σ), i.e. the distance at which the potential is
+        zero.
+
+    Returns
+    -------
+    (lj_a, lj_b) : Tuple[Union[float, duq.Quantity], Union[float, duq.Quantity]]
+        Lennard-Jones parameters A and B, either as floats or duq.Quantity objects, depending
+        on the input arguments.
+    """
+    sigma_6 = lj_sigma ** 6
+    lj_b = 4 * lj_epsilon * sigma_6
+    lj_a = lj_b * sigma_6
+    if isinstance(lj_a, duq.Quantity):
+        raise_for_dimension(lj_a, param_data.dim_lj_a, "lj_a")
+    if isinstance(lj_b, duq.Quantity):
+        raise_for_dimension(lj_b, param_data.dim_lj_b, "lj_b")
+    return lj_a, lj_b

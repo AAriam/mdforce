@@ -274,7 +274,9 @@ class Flexible3SiteSPC(ForceField):
             else helpers.convert_to_quantity(mass_hydrogen, self._dim_m, "mass_hydrogen")
         )
         # Calculate Lennard-Jones parameters A and B from epsilon and sigma
-        self._lj_a, self._lj_b = self._calculate_lj_params_a_b(self._lj_epsilon, self._lj_sigma)
+        self._lj_a, self._lj_b = helpers.calculate_lennard_jones_params_a_b(
+            self._lj_epsilon, self._lj_sigma
+        )
         # Attributes that are set after calling `fit_units_to_input_data`
         self._k_b_conv = None
         self._d0_conv = None

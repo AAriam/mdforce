@@ -338,35 +338,6 @@ class ForceField:
         self._idx_first_long_range_interacting_atom = np.zeros(self._num_atoms - 3, dtype=int)
         return
 
-    def _calculate_lj_params_a_b(
-        self, lj_epsilon: Union[float, duq.Quantity], lj_sigma: Union[float, duq.Quantity]
-    ) -> Tuple[Union[float, duq.Quantity], Union[float, duq.Quantity]]:
-        """
-        Calculate the Lennard-Jones parameters A and B, from epsilon and sigma.
-
-        Parameters
-        ----------
-        lj_epsilon : Union[float, duq.Quantity]
-            Lennard-Jones dispersion energy (ε), i.e. depth of the potential well.
-        lj_sigma : Union[float, duq.Quantity]
-            Lennard-Jones size of the particle (σ), i.e. the distance at which the potential is
-            zero.
-
-        Returns
-        -------
-        (lj_a, lj_b) : Tuple[Union[float, duq.Quantity], Union[float, duq.Quantity]]
-            Lennard-Jones parameters A and B, either as floats or duq.Quantity objects, depending
-            on the input arguments.
-        """
-        sigma_6 = lj_sigma ** 6
-        lj_b = 4 * lj_epsilon * sigma_6
-        lj_a = lj_b * sigma_6
-        if isinstance(lj_a, duq.Quantity):
-            helpers.raise_for_dimension(lj_a, self._dim_lj_a, "lj_a")
-        if isinstance(lj_b, duq.Quantity):
-            helpers.raise_for_dimension(lj_b, self._dim_lj_b, "lj_b")
-        return lj_a, lj_b
-
     @property
     def model_dataframe(self) -> pd.DataFrame:
         """
