@@ -122,21 +122,6 @@ class ForceField:
         self._unit_energy: duq.Unit = None
         self._fitted: bool = False  # Whether the model has been fitted to input data.
 
-    def __call__(self, positions: np.ndarray) -> None:
-        self._func_update_distances(positions)
-        self._update_forces_energies()
-        self._update_acceleration()
-        return
-
-    def _update_forces_energies(self) -> None:
-        self._func_update_coulomb()
-        self._func_update_lennard_jones()
-        self._update_bond_vibration()
-        self._update_angle_vibration()
-        self._force_total[...] = (
-            self._force_coulomb + self._force_lj + self._force_bond + self._force_angle
-        )
-        return
     def initialize_forcefield(
         self, shape_data: Tuple[int, int], pbc_cell_lengths: np.ndarray = None
     ) -> None:
@@ -407,6 +392,18 @@ class ForceField:
     @property
     def unit_time(self) -> duq.Unit:
         return self._unit_time
+
+    def __call__(self, positions: np.ndarray) -> None:
+        self._func_update_distances(positions)
+        self._func_calculate_coulomb()
+        self._update_lennard_jones()
+        self._update_bond_vibration()
+        self._update_angle_vibration()
+        self._force_total[...] = (
+            self._force_coulomb + self._force_lj + self._force_bond + self._force_angle
+        )
+        self._update_acceleration()
+        return
 
     def fit_units_to_input_data(
         self,
