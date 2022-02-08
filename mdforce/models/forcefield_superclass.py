@@ -13,7 +13,8 @@ import pandas as pd
 import duq
 
 # Self
-from .. import helpers
+from .. import distances, helpers
+from ..data import param_data
 
 
 class ForceField:
@@ -46,22 +47,6 @@ class ForceField:
         "_func_update_coulomb",
     )
 
-    # Correct dimension of force-field parameters
-    _dim_k_b = duq.Dimension("energy.length^-2")
-    _dim_d0 = duq.Dimension("length")
-    _dim_k_a = duq.Dimension("energy.dimensionless^-2")
-    _dim_angle0 = duq.Dimension("dimensionless")
-    _dim_lj_epsilon = duq.Dimension("energy")
-    _dim_lj_sigma = duq.Dimension("length")
-    _dim_lj_a = duq.Dimension("energy.length^12")
-    _dim_lj_b = duq.Dimension("energy.length^6")
-    _dim_c = duq.Dimension("electric charge")
-    _dim_k_e = duq.Dimension("energy.length.electric charge^-2")
-    _dim_m = duq.Dimension("mass")
-    # Internal units of class data
-    _unit_mass = duq.Unit("Da")
-    _unit_charge = duq.Unit("e")
-    _unit_angle = duq.Unit("rad")
     # Pandas Dataframe containing several sets of parameters for the model.
     _dataframe = None
 
