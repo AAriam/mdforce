@@ -497,16 +497,16 @@ class Flexible3SiteSPC(ForceField):
             d_ijs = self._distances[idx_curr_atom, idx_first_interacting_atom::3]
             # Call the respective calculation function based on input specifications , i.e. either
             # `self._calculate_lennard_jones` or `self._calculate_lennard_jones_switch`
-            f_ijs, e_ijs, smaller_d_c = self._func_calculate_lennard_jones(q_jsi, d_ijs)
+            f_ijs, e_ijs = self._func_calculate_lennard_jones(q_jsi, d_ijs)
             # Add the calculated values to the corresponding attributes
             self._energy_lj += e_ijs.sum()
             self._force_lj[idx_curr_atom] += f_ijs.sum(axis=0)
-            self._force_lj[idx_first_interacting_atom::3][smaller_d_c] += -f_ijs
+            self._force_lj[idx_first_interacting_atom::3] += -f_ijs
         return
 
     def _calculate_lennard_jones_switch(
         self, q_jsi: np.ndarray, d_ijs: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Calculate the truncated Lennard-Jones potential and forces, using a switch function.
 
@@ -519,14 +519,14 @@ class Flexible3SiteSPC(ForceField):
         -------
 
         """
-        f_ijs, e_ijs, smaller_d_c = force_terms.lennard_jones_switch(
-            q_jsi, d_ijs, self.__lj_a, self.__lj_b, self.__lj_d0, self.__lj_dc
+        f_ijs, e_ijs = force_terms.lennard_jones_switch(
+            q_jsi, d_ijs, self.__lj_a, self.__lj_b, self._switch
         )
-        return f_ijs, e_ijs, smaller_d_c
+        return f_ijs, e_ijs
 
     def _calculate_lennard_jones_full(
         self, q_jsi: np.ndarray, d_ijs: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, None]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Calculate the complete non-truncated Lennard-Jones potential and forces.
 
@@ -540,7 +540,7 @@ class Flexible3SiteSPC(ForceField):
 
         """
         f_ijs, e_ijs = force_terms.lennard_jones(q_jsi, d_ijs, self.__lj_a, self.__lj_b)
-        return f_ijs, e_ijs, None
+        return f_ijs, e_ijs
 
     def _update_bond_vibration(self) -> None:
         """

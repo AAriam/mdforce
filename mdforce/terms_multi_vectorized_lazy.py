@@ -7,7 +7,7 @@ from typing import Union, Tuple
 import numpy as np
 
 # Self
-from . import switch_functions as switch
+from .switch_functions import SwitchFunction
 
 
 def coulomb(
@@ -29,7 +29,6 @@ def lennard_jones(
         a_ijs: Union[np.ndarray, float],
         b_ijs: Union[np.ndarray, float],
 ) -> Tuple[np.ndarray, np.ndarray]:
-
     # Calculate common terms
     inv_d2 = 1 / d_ijs ** 2
     inv_d6 = inv_d2 ** 3
@@ -47,24 +46,28 @@ def lennard_jones_switch(
         d_ijs: np.ndarray,
         a_ijs: Union[np.ndarray, float],
         b_ijs: Union[np.ndarray, float],
-        d_switch_start: float,
-        d_switch_end: float,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-
-    smaller_d_c = d_ijs < d_switch_end
-    f_ijs, e_ijs = lennard_jones(
+        switch: SwitchFunction,
+) -> Tuple[np.ndarray, np.ndarray]:
+    # Initialize force and energy arrays
+    f_ijs = np.zeros(q_jsi.shape)
+    e_ijs = np.zeros(d_ijs.shape)
+    # Create mask for distances within the cutoff
+    smaller_d_c = d_ijs < switch.dc
+    # Calculate full Lennard-Jones for all distances within the cutoff
+    f_ijs[smaller_d_c], e_ijs[smaller_d_c] = lennard_jones(
         q_jsi[smaller_d_c], d_ijs[smaller_d_c], a_ijs, b_ijs
     )
-    larger_equal_d_0 = d_ijs >= d_switch_start
-    within_switch = np.logical_and(smaller_d_c, larger_equal_d_0)
-    switch_val, switch_neg_deriv_val = switch.lennard_jones_1(
-        d_ijs[within_switch], self.__lj_d02, self.__lj_dc2_d02
-    )
+    # Create mask for distances between d0 and cutoff (within switch region)
+    larger_d_0 = d_ijs > switch.d0
+    within_switch = np.logical_and(smaller_d_c, larger_d_0)
+    # Calculate the switch function's value and its derivative for those distances
+    switch_val, switch_deriv_val = switch(q_jsi[within_switch], d_ijs[within_switch])
+    # Modify forces and energies for distances within the switch
     f_ijs[within_switch] = (
-            f_ijs[within_switch] * switch_val + e_ijs[within_switch] * switch_neg_deriv_val
+            f_ijs[within_switch] * switch_val - e_ijs[within_switch] * switch_deriv_val
     )
     e_ijs[within_switch] *= switch_val
-    return f_ijs, e_ijs, smaller_d_c
+    return f_ijs, e_ijs
 
 
 def bond_vibration_harmonic(
