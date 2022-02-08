@@ -14,7 +14,7 @@ import pandas as pd
 import duq
 
 # Self
-from ...data import atom_data
+from ...data import atom_data, param_data
 from ... import helpers
 from ..forcefield_superclass import ForceField
 from ... import terms_multi_vectorized_lazy as force_terms
