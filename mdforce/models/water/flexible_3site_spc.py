@@ -204,69 +204,30 @@ class Flexible3SiteSPC(ForceField):
             self._unitless = True
         # Store parameters; if parameters are all unitless, store the numbers, otherwise, verify
         # that they have the correct dimensions, and store them as `duq.Quantity` objects.
-        self._k_b = (
-            bond_force_constant
-            if self._unitless
-            else helpers.convert_to_quantity(
-                bond_force_constant, self._dim_k_b, "bond_force_constant"
-            )
+
+        def f(arg, arg_dim, arg_name):
+            """
+            Helper function used in __ini__.
+            If class is instantiated unitless, return the argument itself, otherwise transform it
+            to a duq.Quantity object and verify its dimension.
+            """
+            return arg if self._unitless else helpers.convert_to_quantity(arg, arg_dim, arg_name)
+
+        self._k_b = f(bond_force_constant, param_data.dim_k_b, "bond_force_constant")
+        self._d0 = f(bond_eq_dist, param_data.dim_d0, "bond_eq_dist")
+        self._k_a = f(angle_force_constant, param_data.dim_k_a, "angle_force_constant")
+        self._angle0 = f(angle_eq_angle, param_data.dim_angle0, "angle_eq_angle")
+        self._lj_epsilon = f(
+            lennard_jones_epsilon_oo, param_data.dim_lj_epsilon, "lennard_jones_epsilon_oo"
         )
-        self._d0 = (
-            bond_eq_dist
-            if self._unitless
-            else helpers.convert_to_quantity(bond_eq_dist, self._dim_d0, "bond_eq_dist")
+        self._lj_sigma = f(
+            lennard_jones_sigma_oo, param_data.dim_lj_sigma, "lennard_jones_sigma_oo"
         )
-        self._k_a = (
-            angle_force_constant
-            if self._unitless
-            else helpers.convert_to_quantity(
-                angle_force_constant, self._dim_k_a, "angle_force_constant"
-            )
-        )
-        self._angle0 = (
-            angle_eq_angle
-            if self._unitless
-            else helpers.convert_to_quantity(angle_eq_angle, self._dim_angle0, "angle_eq_angle")
-        )
-        self._lj_epsilon = (
-            lennard_jones_epsilon_oo
-            if self._unitless
-            else helpers.convert_to_quantity(
-                lennard_jones_epsilon_oo, self._dim_lj_epsilon, "lennard_jones_epsilon_oo"
-            )
-        )
-        self._lj_sigma = (
-            lennard_jones_sigma_oo
-            if self._unitless
-            else helpers.convert_to_quantity(
-                lennard_jones_sigma_oo, self._dim_lj_sigma, "lennard_jones_sigma_oo"
-            )
-        )
-        self._c_o = (
-            charge_oxygen
-            if self._unitless
-            else helpers.convert_to_quantity(charge_oxygen, self._dim_c, "charge_oxygen")
-        )
-        self._c_h = (
-            charge_hydrogen
-            if self._unitless
-            else helpers.convert_to_quantity(charge_hydrogen, self._dim_c, "charge_hydrogen")
-        )
-        self._k_e = (
-            coulomb_const
-            if self._unitless
-            else helpers.convert_to_quantity(coulomb_const, self._dim_k_e, "coulomb_const")
-        )
-        self._m_o = (
-            mass_oxygen
-            if self._unitless
-            else helpers.convert_to_quantity(mass_oxygen, self._dim_m, "mass_oxygen")
-        )
-        self._m_h = (
-            mass_hydrogen
-            if self._unitless
-            else helpers.convert_to_quantity(mass_hydrogen, self._dim_m, "mass_hydrogen")
-        )
+        self._c_o = f(charge_oxygen, param_data.dim_c, "charge_oxygen")
+        self._c_h = f(charge_hydrogen, param_data.dim_c, "charge_hydrogen")
+        self._k_e = f(coulomb_const, param_data.dim_k_e, "coulomb_const")
+        self._m_o = f(mass_oxygen, param_data.dim_m, "mass_oxygen")
+        self._m_h = f(mass_hydrogen, param_data.dim_m, "mass_hydrogen")
         # Calculate Lennard-Jones parameters A and B from epsilon and sigma
         self._lj_a, self._lj_b = helpers.calculate_lennard_jones_params_a_b(
             self._lj_epsilon, self._lj_sigma
