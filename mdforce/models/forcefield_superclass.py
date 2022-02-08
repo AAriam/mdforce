@@ -17,6 +17,9 @@ from .. import distances, helpers
 from ..data import param_data
 
 
+__all__ = ["ForceField"]
+
+
 class ForceField:
 
     __slots__ = (
