@@ -342,7 +342,7 @@ class Flexible3SiteSPC(ForceField):
         # Calculate index of first long-range interacting atom for each atom (i.e. the index of
         # first atom after the current atom that is not in the same molecule as the current atom)
         for idx_curr_atom in range(self._num_atoms - 3):
-            self._idx_first_long_range_interacting_atom[idx_curr_atom] = (
+            self._indices_first_long_range_interacting_atom[idx_curr_atom] = (
                 idx_curr_atom + 3 - idx_curr_atom % 3
             )
         return
@@ -455,7 +455,7 @@ class Flexible3SiteSPC(ForceField):
         self._energy_coulomb = 0
         # Iterate over the indices of all atoms, other than the last three ones
         for idx_curr_atom, idx_first_interacting_atom in enumerate(
-            self._idx_first_long_range_interacting_atom
+            self._indices_first_long_range_interacting_atom
         ):
             # Retrieve the distance-vectors/distances between current atom and all
             # atoms after it, as two arrays
