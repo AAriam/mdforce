@@ -191,7 +191,7 @@ class Flexible3SiteSPC(ForceField):
         # Initialize superclass
         super().__init__()
         # Verify that arguments are either all numbers, or all strings/duq.Quantity
-        args = list(locals().values())[1:-1]
+        args = list(locals().values())[0:-2]
         count_nums = 0
         for arg in args:
             if isinstance(arg, (int, float, np.number)):
