@@ -4,7 +4,7 @@ This module contains the superclass `ForceField`, from which all force-field cla
 
 # Standard library
 from __future__ import annotations
-from typing import Tuple, Union
+from typing import Tuple, Union, Callable
 import webbrowser
 
 # 3rd-party packages
@@ -15,6 +15,7 @@ import duq
 # Self
 from .. import distances, helpers
 from ..data import param_data
+from .. import switch_functions as switches
 
 
 __all__ = ["ForceField"]
@@ -44,7 +45,7 @@ class ForceField:
         "_model_ref_name",
         "_model_ref_cite",
         "_model_ref_link",
-        "_pbc_box_lengths",
+        "_pbc_cell_lengths",
         "_func_update_distances",
         "_func_calculate_lennard_jones",
         "_func_calculate_coulomb",
@@ -54,10 +55,21 @@ class ForceField:
         "_unit_force",
         "_unit_energy",
         "_unitless",
+        "_unit_pbc_cell_lengths",
+        "_switch_lj",
+        "_switch_coulomb",
+        "_switch_lj_d0",
+        "_switch_lj_dc",
+        "_switch_coulomb_d0",
+        "_switch_coulomb_dc",
+        "_switch_coulomb_d0_conv",
+        "_switch_coulomb_dc_conv",
+        "_switch_lj_d0_conv",
+        "_switch_lj_dc_conv",
     )
 
     # Pandas Dataframe containing several sets of parameters for the model.
-    _dataframe = None
+    _dataframe = None  # Should be set by each subclass
 
     @classmethod
     def print_available_models(cls) -> None:
@@ -114,58 +126,28 @@ class ForceField:
         # Attributes that are set after calling `initialize_forcefield`
         self._num_molecules: int = None
         self._num_atoms: int = None
-        self._pbc_box_lengths: np.ndarray = None
+        self._pbc_cell_lengths: np.ndarray = None
+        self._unit_pbc_cell_lengths: duq.Unit = None
         self._func_update_distances: Callable = None
         self._func_calculate_lennard_jones: Callable = None
         self._func_calculate_coulomb: Callable = None
+        self._switch_lj_d0: Union[float, duq.Quantity] = None
+        self._switch_lj_dc: Union[float, duq.Quantity] = None
+        self._switch_coulomb_d0: Union[float, duq.Quantity] = None
+        self._switch_coulomb_dc: Union[float, duq.Quantity] = None
         # Attributes that are set after calling `fit_units_to_input_data`
         self._unit_length: duq.Unit = None
         self._unit_time: duq.Unit = None
         self._unit_force: duq.Unit = None
         self._unit_energy: duq.Unit = None
+        self._switch_coulomb_d0_conv: duq.Quantity = None
+        self._switch_coulomb_dc_conv: duq.Quantity = None
+        self._switch_lj_d0_conv: duq.Quantity = None
+        self._switch_lj_dc_conv: duq.Quantity = None
+        self._switch_coulomb: switches.SwitchFunction = None
+        self._switch_lj: switches.SwitchFunction = None
         self._fitted: bool = False  # Whether the model has been fitted to input data.
-
-    def initialize_forcefield(
-        self, shape_data: Tuple[int, int], pbc_cell_lengths: np.ndarray = None
-    ) -> None:
-        """
-        Prepare the force-field for a specific shape of input coordinates. This is necessary to
-        determine the shape of arrays that are used to store the output data after each force
-        evaluation, since these arrays are only created once and then overwritten after each
-        re-evaluation.
-
-        Parameters
-        ----------
-        shape_data : Tuple(int, int)
-            Shape of the array of positions, where the first value is the number of atoms (should
-            be a multiple of 3), and the second value is the number of spatial dimensions of the
-            coordinates of each atom.
-        pbc_cell_lengths : numpy.ndarray
-            Lengths of the unit cell of the periodic system as a 1D-array of shape (3, ). If set to
-            None, then periodic boundary condition will not be used.
-
-        Returns
-        -------
-            None
-            Arrays for storing the force-field evaluation results are initialized with the
-            correct shape.
-        """
-        # Calculate number of atoms and molecules
-        self._num_atoms = shape_data[0]
-        self._num_molecules = self._num_atoms // 3
-        if pbc_cell_lengths is not None:
-            self._pbc_box_lengths = pbc_cell_lengths
-            self._func_update_distances = self._update_distances_pbc
-            self._func_update_coulomb = self._update_coulomb_pbc_ewald
-            self._func_update_lennard_jones = self._update_lennard_jones_pbc
-        else:
-            self._func_update_distances = self._update_distances
-            self._func_update_coulomb = self._update_coulomb
-            self._func_update_lennard_jones = self._update_lennard_jones
-        self._initialize_output_arrays(shape_data)
-        # Do other preparations specific to the force-field
-        return
-
+        # Attributes that are only set when instantiating from alternative constructor `from_model`
         self._model_name: str = None
         self._model_description: str = None
         self._model_ref_name: str = None
@@ -408,6 +390,106 @@ class ForceField:
         self._update_acceleration()
         return
 
+    def initialize_forcefield(
+        self,
+        shape_data: Tuple[int, int],
+        pbc_cell_lengths: np.ndarray = None,
+        unit_pbc_cell_lengths: Union[str, duq.Unit] = "Å",
+        truncate_short_range_interactions: bool = False,
+        lennard_jones_switch_region: Tuple[
+            Union[float, str, duq.Quantity], Union[float, str, duq.Quantity]
+        ] = ("9 Å", "12 Å"),
+        coulomb_switch_region: Tuple[
+            Union[float, str, duq.Quantity], Union[float, str, duq.Quantity]
+        ] = ("9 Å", "12 Å"),
+    ) -> None:
+        """
+        Prepare the force-field for a specific shape of input coordinates. This is necessary to
+        determine the shape of arrays that are used to store the output data after each force
+        evaluation, since these arrays are only created once and then overwritten after each
+        re-evaluation.
+
+        Parameters
+        ----------
+        shape_data : Tuple(int, int)
+            Shape of the array of positions, where the first value is the number of atoms (should
+            be a multiple of 3), and the second value is the number of spatial dimensions of the
+            coordinates of each atom.
+        pbc_cell_lengths : numpy.ndarray
+            Lengths of the unit cell of the periodic system as a 1D-array of shape (3, ). If set to
+            None, then periodic boundary condition will not be used.
+        unit_pbc_cell_lengths : Union[str, duq.Unit]
+
+        truncate_short_range_interactions : bool
+
+        lennard_jones_switch_region
+
+        coulomb_switch_region
+
+        Returns
+        -------
+            None
+            Arrays for storing the force-field evaluation results are initialized with the
+            correct shape.
+        """
+
+        def verify_switch_region(switch_region: Tuple, switch_name: str, pbc=True):
+            if self._unitless:
+                switch_region_conv = switch_region
+                min_cell_length = np.min(pbc_cell_lengths)
+            else:
+                switch_region_conv = tuple(
+                    map(
+                        lambda val: helpers.convert_to_quantity(val, "L", switch_name),
+                        switch_region
+                    )
+                )
+                min_cell_length = (
+                    np.min(pbc_cell_lengths) *
+                    self._unit_pbc_cell_lengths.conversion_coefficients_to(
+                        switch_region_conv[1].unit
+                    )[1]
+                )
+            # Verify that cutoff radius 'dc' is greater than switch radius 'd0'
+            if switch_region_conv[1] <= switch_region_conv[0]:
+                raise ValueError(
+                    "The inputted cutoff radius is smaller than or equal to the switch radius "
+                    f"for the {switch_name} switch.")
+            # Verify that cutoff radius 'dc' is smaller than half of the smallest box length
+            elif pbc and switch_region_conv[1] >= min_cell_length / 2:
+                raise ValueError("The cutoff radius should be smaller than half of the smallest"
+                                 " box length.")
+            return switch_region_conv
+
+        if pbc_cell_lengths is not None:
+            self._pbc_cell_lengths = pbc_cell_lengths
+            if not self._unitless:
+                self._unit_pbc_cell_lengths = helpers.convert_to_unit(
+                    unit_pbc_cell_lengths, "L", "pbc_cell_lengths_unit"
+                )
+                self._switch_lj_d0, self._switch_lj_dc = verify_switch_region(
+                    lennard_jones_switch_region, "lennard_jones_switch_region"
+                )
+                self._switch_coulomb_d0, self._switch_coulomb_dc = verify_switch_region(
+                    coulomb_switch_region, "coulomb_switch_region"
+                )
+            self._func_update_distances = self._update_distances_pbc
+            self._func_calculate_coulomb = self._update_coulomb_pbc_ewald
+            self._func_calculate_lennard_jones = self._calculate_lennard_jones_switch
+        else:
+            self._func_update_distances = self._update_distances
+            self._func_calculate_coulomb = self._update_coulomb
+            if truncate_short_range_interactions:
+                self._func_calculate_lennard_jones = self._calculate_lennard_jones_switch
+                self._switch_lj_d0, self._switch_lj_dc = verify_switch_region(
+                    lennard_jones_switch_region, "lennard_jones_switch_region", pbc=False
+                )
+            else:
+                self._func_calculate_lennard_jones = self._calculate_lennard_jones_full
+        self._initialize_output_arrays(shape_data)
+        # Do other preparations specific to the force-field
+        return
+
     def fit_units_to_input_data(
         self,
         unit_length: Union[str, duq.Unit],
@@ -431,7 +513,29 @@ class ForceField:
             None
             All force-field parameters are converted to be compatible with the given units.
         """
-        pass
+        if self._unitless:
+            raise ValueError("Input parameters were inputted as unitless numbers.")
+        else:
+            self._unit_length = helpers.convert_to_unit(unit_length, "length", "unit_length")
+            self._unit_time = helpers.convert_to_unit(unit_time, "time", "unit_time")
+        if self._pbc_cell_lengths is not None:
+            self._pbc_cell_lengths *= self._unit_pbc_cell_lengths.conversion_coefficients_to(
+                self._unit_length
+            )[1]
+            self._switch_coulomb_d0_conv = self._switch_coulomb_d0.convert_unit(self._unit_length)
+            self._switch_coulomb_dc_conv = self._switch_coulomb_dc.convert_unit(self._unit_length)
+            self._switch_coulomb = switches.Poly1(
+                self._switch_coulomb_d0_conv.value,
+                self._switch_coulomb_dc_conv.value
+            )
+        if self._func_calculate_lennard_jones == self._calculate_lennard_jones_switch:
+            self._switch_lj_d0_conv = self._switch_lj_d0.convert_unit(self._unit_length)
+            self._switch_lj_dc_conv = self._switch_lj_dc.convert_unit(self._unit_length)
+            self._switch_lj = switches.Poly1(
+                self._switch_lj_d0_conv.value,
+                self._switch_lj_dc_conv.value
+            )
+        return
 
     def _initialize_output_arrays(self, shape_data) -> None:
         """
@@ -490,7 +594,7 @@ class ForceField:
 
     def _update_distances_pbc(self, positions: np.ndarray) -> None:
         self._distance_vectors, self._distances = distances.array_multi_self_pbc(
-            positions, self._indices_first_long_range_interacting_atom, self._pbc_box_lengths
+            positions, self._indices_first_long_range_interacting_atom, self._pbc_cell_lengths
         )
         return
 

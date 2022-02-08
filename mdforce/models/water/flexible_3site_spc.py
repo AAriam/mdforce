@@ -18,7 +18,6 @@ from ...data import atom_data, param_data
 from ... import helpers
 from ..forcefield_superclass import ForceField
 from ... import terms_multi_vectorized_lazy as force_terms
-from ... import switch_functions as switch
 
 
 __all__ = ["Flexible3SiteSPC"]
@@ -312,7 +311,16 @@ class Flexible3SiteSPC(ForceField):
         return str_repr
 
     def initialize_forcefield(
-        self, shape_data: Tuple[int, int], pbc_cell_lengths: np.ndarray = None
+        self, shape_data: Tuple[int, int],
+        pbc_cell_lengths: np.ndarray = None,
+        unit_pbc_cell_lengths: Union[str, duq.Unit] = "Å",
+        truncate_short_range_interactions=False,
+        lennard_jones_switch_region: Tuple[
+            Union[float, str, duq.Quantity], Union[float, str, duq.Quantity]
+        ] = ("9 Å", "12 Å"),
+        coulomb_switch_region: Tuple[
+            Union[float, str, duq.Quantity], Union[float, str, duq.Quantity]
+        ] = ("9 Å", "12 Å"),
     ) -> None:
         """
         Prepare the force-field for a specific shape of input coordinates. This is necessary to
@@ -329,6 +337,13 @@ class Flexible3SiteSPC(ForceField):
         pbc_cell_lengths : numpy.ndarray
             Lengths of the unit cell of the periodic system as a 1D-array of shape (3, ). If set to
             None, then periodic boundary condition will not be used.
+        unit_pbc_cell_lengths : Union[str, duq.Unit]
+
+        truncate_short_range_interactions : bool
+
+        lennard_jones_switch_region
+
+        coulomb_switch_region
 
         Returns
         -------
@@ -336,7 +351,18 @@ class Flexible3SiteSPC(ForceField):
             Arrays for storing the force-field evaluation results are initialized with the
             correct shape.
         """
-        super().initialize_forcefield(shape_data, pbc_cell_lengths)
+        # Calculate number of atoms and molecules
+        self._num_atoms = shape_data[0]
+        self._num_molecules = self._num_atoms // 3
+
+        super().initialize_forcefield(
+            shape_data,
+            pbc_cell_lengths,
+            unit_pbc_cell_lengths,
+            truncate_short_range_interactions,
+            lennard_jones_switch_region,
+            coulomb_switch_region,
+        )
         if self._unitless:
             self.__c = np.tile([self._c_o, self._c_h, self._c_h], self._num_molecules)
         # Calculate index of first long-range interacting atom for each atom (i.e. the index of
@@ -370,11 +396,7 @@ class Flexible3SiteSPC(ForceField):
             None
             All force-field parameters are converted to be compatible with the given units.
         """
-        if self._unitless:
-            raise ValueError("Input parameters were inputted as unitless numbers.")
-        else:
-            self._unit_length = helpers.convert_to_unit(unit_length, "length", "unit_length")
-            self._unit_time = helpers.convert_to_unit(unit_time, "time", "unit_time")
+        super().fit_units_to_input_data(unit_length, unit_time)
         # Calculate and verify general units
         self._unit_force = param_data.unit_mass * self._unit_length / self._unit_time ** 2
         helpers.raise_for_dimension(self._unit_force, "force", "_unit_force")
@@ -524,7 +546,7 @@ class Flexible3SiteSPC(ForceField):
 
         """
         f_ijs, e_ijs = force_terms.lennard_jones_switch(
-            q_jsi, d_ijs, self.__lj_a, self.__lj_b, self._switch
+            q_jsi, d_ijs, self.__lj_a, self.__lj_b, self._switch_lj
         )
         return f_ijs, e_ijs
 
