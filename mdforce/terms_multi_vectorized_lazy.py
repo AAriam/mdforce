@@ -5,9 +5,91 @@ from typing import Union, Tuple
 
 # 3rd-party packages
 import numpy as np
+from scipy import special
 
 # Self
 from .switch_functions import SwitchFunction
+
+
+class CoulombEwald:
+    def __init__(
+            self,
+            k_e,
+            box_lengths,
+            switch: SwitchFunction,
+    ):
+        self._k_e: float = k_e
+        self._box_lengths: np.ndarray = box_lengths
+        self._switch: SwitchFunction = switch
+
+        self._sigma: float = 0
+
+        self._sqrt2_sigma = np.sqrt(2) * self._sigma
+
+        self._ks: np.ndarray = self._calculate_k_vectors()
+
+        # --- Calculate common terms ---
+        # sqrt(2/π)
+        self._sqrt_2_div_pi = np.sqrt(2 / np.pi)
+        # 1/Vɛ0 (where 1/ɛ0 = 4π*k_e)
+        self._inv_v_epsilon = 4 * np.pi * self._k_e / np.prod(self._box_lengths)
+        # exp(-σ^2/2)
+        self._exp_neg_sigma2_div_2 = np.exp(-self._sigma ** 2 / 2)
+
+        return
+
+    def _calculate_k_vectors(self):
+        return
+
+    def __call__(self, q_jsi, d_ijs, c_ijs):
+        self._q_jsi = q_jsi
+        self._d_ijs = d_ijs
+        self._c_ijs = c_ijs
+        # Initialize force and energy arrays
+        self._f_ijs = np.zeros(q_jsi.shape)
+        self._e_ijs = np.zeros(d_ijs.shape)
+        # Calculate
+        self._calculate_short_range()
+        self._calculate_long_range()
+        return self._f_ijs, self._e_ijs
+
+    def _calculate_short_range(self):
+        # Create mask for distances within the cutoff
+        smaller_d_c_mask = self._d_ijs < self._switch.dc
+        d_ijs_smaller_d_c = self._d_ijs[smaller_d_c_mask]
+        # Calculate common terms
+        d_ijs_smaller_d_c__div__sqrt2_sigma = d_ijs_smaller_d_c / self._sqrt2_sigma
+        # Calculate full Coulomb for all distances within the cutoff
+        # Calculate potentials
+        e_ijs = self._k_e * self._c_ijs * special.erfc(
+            d_ijs_smaller_d_c__div__sqrt2_sigma
+        ) / d_ijs_smaller_d_c
+        self._e_ijs[smaller_d_c_mask] = e_ijs
+        # Calculate forces
+        self._f_ijs[smaller_d_c_mask] = (
+                e_ijs + self._k_e * self._c_ijs * self._sqrt_2_div_pi * np.exp(
+                    - d_ijs_smaller_d_c__div__sqrt2_sigma ** 2
+                )
+        ) * self._q_jsi[smaller_d_c_mask] / d_ijs_smaller_d_c ** 2
+        # Create mask for distances between d0 and cutoff (within switch region)
+        larger_d_0_mask = self._d_ijs > self._switch.d0
+        within_switch_mask = np.logical_and(smaller_d_c_mask, larger_d_0_mask)
+        # Calculate the switch function's value and its derivative for those distances
+        switch_val, switch_deriv_val = self._switch(
+            self._q_jsi[within_switch_mask], self._d_ijs[within_switch_mask]
+        )
+        # Modify forces and energies for distances within the switch
+        self._f_ijs[within_switch_mask] = (
+                self._f_ijs[within_switch_mask] * switch_val
+                - e_ijs[within_switch_mask] * switch_deriv_val
+        )
+        self._e_ijs[within_switch_mask] *= switch_val
+        return
+
+    def _calculate_long_range(self):
+        for k in self._ks:
+
+        return
 
 
 def coulomb(
