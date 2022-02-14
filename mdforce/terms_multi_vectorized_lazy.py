@@ -146,7 +146,8 @@ def lennard_jones_switch(
     switch_val, switch_deriv_val = switch(q_jsi[within_switch], d_ijs[within_switch])
     # Modify forces and energies for distances within the switch
     f_ijs[within_switch] = (
-            f_ijs[within_switch] * switch_val - e_ijs[within_switch] * switch_deriv_val
+            f_ijs[within_switch] * switch_val.reshape(-1, 1)
+            - e_ijs[within_switch].reshape(-1, 1) * switch_deriv_val
     )
     e_ijs[within_switch] *= switch_val
     return f_ijs, e_ijs
