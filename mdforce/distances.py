@@ -50,6 +50,19 @@ def two_arrays(q_i: np.ndarray, q_j: np.ndarray) -> Tuple[np.ndarray, np.ndarray
     return q_ji, d_ij
 
 
+def two_arrays_pbc(
+        q_i: np.ndarray,
+        q_j: np.ndarray,
+        pbc_box_lengths: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
+    q_ji = q_i - q_j
+    dist_vectors = q_ji - pbc_box_lengths * np.rint(
+            q_ji / pbc_box_lengths
+        )
+    dists = np.linalg.norm(dist_vectors, axis=q_ji.ndim - 1)
+    return dist_vectors, dists
+
+
 def array_multi_self(q: np.ndarray):
     # Create an empty matrix for storing the distance vectors
     num_vects, num_dims = q.shape
